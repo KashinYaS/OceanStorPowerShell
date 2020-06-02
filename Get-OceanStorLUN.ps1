@@ -1,14 +1,14 @@
-Function Get-OceanStorHost {
+Function Get-OceanStorLUN {
   [CmdletBinding(DefaultParameterSetName="Default")]
   PARAM (
-    [PARAMETER(Mandatory=$True, Position=0,HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][String]$OceanStor,
-    [PARAMETER(Mandatory=$False,Position=1,HelpMessage = "Port",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][int]$Port=8088,	
-    [PARAMETER(Mandatory=$True, Position=2,HelpMessage = "Username",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][String]$Username,
-    [PARAMETER(Mandatory=$True, Position=3,HelpMessage = "Password",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][String]$Password,
-    [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][int]$Scope=0,
-    [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][bool]$Silent=$true,
-    [PARAMETER(Mandatory=$True,Position=6,HelpMessage = "Host name",ParameterSetName='Hostname')][String]$Hostname = $null,
-    [PARAMETER(Mandatory=$True,Position=6,HelpMessage = "Host ID",ParameterSetName='ID')][int]$ID = $null
+    [PARAMETER(Mandatory=$True, Position=0,HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LUNName')][String]$OceanStor,
+    [PARAMETER(Mandatory=$False,Position=1,HelpMessage = "Port",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LUNName')][int]$Port=8088,	
+    [PARAMETER(Mandatory=$True, Position=2,HelpMessage = "Username",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LUNName')][String]$Username,
+    [PARAMETER(Mandatory=$True, Position=3,HelpMessage = "Password",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LUNName')][String]$Password,
+    [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LUNName')][int]$Scope=0,
+    [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LUNName')][bool]$Silent=$true,
+    [PARAMETER(Mandatory=$True,Position=6,HelpMessage = "LUN name",ParameterSetName='LUNName')][String]$Name = $null,
+    [PARAMETER(Mandatory=$True,Position=6,HelpMessage = "LUN ID",ParameterSetName='ID')][int]$ID = $null
   )
   $RetVal = $null
  
@@ -48,28 +48,28 @@ Function Get-OceanStorHost {
 
     # --- getting existing hosts 
     if (-not $ID) {
-	  $URI = $RESTURI  + "host"
+	  $URI = $RESTURI  + "lun"
 	}
 	else {
-	  $URI = $RESTURI  + "host/" + $ID
+	  $URI = $RESTURI  + "lun/" + $ID
 	}
 	
     $result = Invoke-RestMethod -Method "Get" $URI -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
     if ($result -and ($result.error.code -eq 0)) {
-      if (-not $Hostname) {
-	    $RetVal = $result.data
+      if (-not $Name) {
+	    $RetVal = $result.data		
 	  }
 	  else {
-	    $RetVal = $result.data | where {$_.Name.ToUpper() -eq $Hostname.ToUpper()}
+	    $RetVal = $result.data | where {$_.Name.ToUpper() -eq $Name.ToUpper()}
 		if ((-not $RetVal) -and (-not $Silent)) {
-		  write-host "ERROR (Get-OceanStorHosts): Host $($Hostname) not found" -foreground "Red"
+		  write-host "ERROR (Get-OceanStorLUN): LUN $($Name) not found" -foreground "Red"
 		}
 	  }
     }
     else {
       $RetVal = $null
 	  if (-not $Silent) {
-	    write-host "ERROR (Get-OceanStorHosts): $($result.error.code); $($result.error.description)" -foreground "Red"
+	    write-host "ERROR (Get-OceanStorLUN): $($result.error.code); $($result.error.description)" -foreground "Red"
 	  }
     }
   }
@@ -79,3 +79,4 @@ Function Get-OceanStorHost {
   
   Return($RetVal)
 }
+
