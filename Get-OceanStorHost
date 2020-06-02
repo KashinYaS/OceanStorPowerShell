@@ -12,7 +12,7 @@ Function Get-OceanStorHost {
   )
   $RetVal = $null
  
-  # --- prepare to connect with TLS 1.2 anc ignore self-signed certificate of OceanStor ---
+  # --- prepare to connect with TLS 1.2 and ignore self-signed certificate of OceanStor ---
   [Net.ServicePointManager]::SecurityProtocol =[Net.SecurityProtocolType]::Tls12
 
   Add-Type @"
