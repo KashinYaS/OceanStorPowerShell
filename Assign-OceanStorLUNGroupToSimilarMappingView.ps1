@@ -58,7 +58,7 @@ Function Assign-OceanStorLUNGroupToSimilarMappingView {
     foreach ($CurrentName in $Name) {
       if (-not $Silent) {
         $PercentCompletedLUNGroup = [math]::Floor($ProcessedLUNGroup / $Name.Count * 100)
-	     Write-Progress -Activity "Adding LUN Groups" -CurrentOperation "$($CurrentName)" -PercentComplete $PercentCompletedLUNGroup
+	    Write-Progress -Activity "Adding LUN Groups" -CurrentOperation "$($CurrentName)" -PercentComplete $PercentCompletedLUNGroup
 	  }
 	  $CurrentLUNGroup = $LUNGroups | where {$_.NAME.ToUpper() -eq $CurrentName.ToUpper()}
       if (-not ( $CurrentLUNGroup )) {
@@ -103,11 +103,11 @@ Function Assign-OceanStorLUNGroupToSimilarMappingView {
 		  }
 		} # else (-not ( $CurrentMappedView ))
 	  } # else (-not (  $CurrentLUNGroup  ))
-	$ProcessedLUNGroup += 1
-  } #foreach $CurrentName
+	  $ProcessedLUNGroup += 1
+    } #foreach $CurrentName
   
-  $URI = $RESTURI  + "sessions"
-  $SessionCloseResult = Invoke-RestMethod -Method Delete $URI -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession  
+    $URI = $RESTURI  + "sessions"
+    $SessionCloseResult = Invoke-RestMethod -Method Delete $URI -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession  
   }
   
   Return($RetVal)
