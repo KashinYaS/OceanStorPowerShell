@@ -1,4 +1,4 @@
-Function New-OceanStorLUNGroup {
+Function Assign-OceanStorLUNGroupToSimilarMappingView {
   [CmdletBinding(DefaultParameterSetName="LUNGroupName")]
   PARAM (
     [PARAMETER(Mandatory=$True, Position=0,HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='LUNGroupName')][String]$OceanStor,
@@ -8,8 +8,7 @@ Function New-OceanStorLUNGroup {
     [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='LUNGroupName')][int]$Scope=0,
     [PARAMETER(Mandatory=$False,Position=8,HelpMessage = "WhatIf - if mentioned then do nothing, only print message",ParameterSetName='LUNGroupName')][switch]$WhatIf,	
     [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='LUNGroupName')][bool]$Silent=$true,
-    [PARAMETER(Mandatory=$False,Position=7,HelpMessage = "Application Type (0 - other, 1 - oracle, 2 - exchange, 3 - sqlserver, 4 - vmware, 5 - hyper-V)",ParameterSetName='LUNGroupName')][int]$AppType=0,
-    [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "LUN Group name",ParameterSetName='LUNGroupName')][Parameter(ValueFromRemainingArguments=$true)][String[]]$Name = $null
+    [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "LUN Group and Mapping view name",ParameterSetName='LUNGroupName')][Parameter(ValueFromRemainingArguments=$true)][String[]]$Name = $null
   )
   $RetVal = $null
  
@@ -30,7 +29,11 @@ Function New-OceanStorLUNGroup {
   [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
   # --- end TLS and Cert preparation ---
   # Caution! Any self-signed and invalid certificate are truated furthermore!
-  
+
+  # Get LUN Groups and mapping views needed to associate
+  $LUNGroups   = Get-OceanStorLUNGroup    -OceanStor $OceanStor -Port $Port -Username $Username -Password $Password -Scope $Scope -Silent $True | where {$Name.ToUpper() -contains $_.NAME.ToUpper()}
+  $MappedViews = Get-OceanStorMappingView -OceanStor $OceanStor -Port $Port -Username $Username -Password $Password -Scope $Scope -Silent $True | where {$Name.ToUpper() -contains $_.NAME.ToUpper()}
+    
   $body = @{username = "$($Username)";password = "$($Password)";scope = $Scope}
   
   $BaseRESTURI = "https://" + $OceanStor + ":" + $Port +"/deviceManager/rest/"
@@ -47,7 +50,7 @@ Function New-OceanStorLUNGroup {
 
     $UserCredentials = New-Object System.Management.Automation.PsCredential("$($Username)",$(ConvertTo-SecureString -String "$($Password)" -AsPlainText -force))
 
-	$URI = $RESTURI  + "lungroup"
+	$URI = $RESTURI  + "mappingview/create_associate"
 
     $RetVal = @() 
 
@@ -57,33 +60,55 @@ Function New-OceanStorLUNGroup {
         $PercentCompletedLUNGroup = [math]::Floor($ProcessedLUNGroup / $Name.Count * 100)
 	     Write-Progress -Activity "Adding LUN Groups" -CurrentOperation "$($CurrentName)" -PercentComplete $PercentCompletedLUNGroup
 	  }
-      
-	  $LUNGroupForJSON = @{
-        NAME = $CurrentName
-	    APPTYPE = $AppType
-      }
-
-      if (-not $WhatIf) {	
-        $result = Invoke-RestMethod -Method "Post" -Uri $URI -Body (ConvertTo-Json $LUNGroupForJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
-        if ($result -and ($result.error.code -eq 0)) {
-	      $RetVal += $result.data		
-        }
-        else {
-          $RetVal += $null
-	      if (-not $Silent) {
-	        write-host "ERROR (New-OceanStorLUNGroup): $($result.error.code); $($result.error.description)" -foreground "Red"
-	      }
-        }
+	  $CurrentLUNGroup = $LUNGroups | where {$_.NAME.ToUpper() -eq $CurrentName.ToUpper()}
+      if (-not ( $CurrentLUNGroup )) {
+	    # No actual LUN Group found
+		if (-not $Silent) {
+		  write-host "ERROR (Assign-OceanStorLUNGroupToSimilarMappingView): LUN group $($CurrentName) not found - skipping association" -foreground "Red"
+		}
 	  }
 	  else {
-	    write-host "WhatIf (New-OceanStorLUNGroup): Create LUN Group with name $($CurrentName) and application type $($AppType)" -foreground "Green"
-	  }
-      $ProcessedLUNGroup += 1
-    }
-  
+	    # LUN group found, let's check Mapped View
+		$CurrentMappedView = $MappedViews | where {$_.NAME.ToUpper() -eq $CurrentName.ToUpper()}
+		if (-not ( $CurrentMappedView )) {
+		  if (-not $Silent) {
+		    write-host "ERROR (Assign-OceanStorLUNGroupToSimilarMappingView): Mapped View $($CurrentName) not found - skipping association" -foreground "Red"
+		  }
+        }
+		else {
+		  # LUN group and Mapped view exist - associate them
+		  if ($WhatIf) {
+		    write-host "WhatIf (Assign-OceanStorLUNGroupToSimilarMappingView): Associate LUN Group ($($CurrentName), ID $($CurrentLUNGroup.ID)) and Mapped view ($($CurrentName), ID $($CurrentMappedView.ID))" -foreground "Green"
+		  }
+		  else {
+            $MappingViewAssocForJSON = @{
+              ID = $CurrentMappedView.ID
+		      ASSOCIATEOBJTYPE = 256
+		      ASSOCIATEOBJID = $CurrentLUNGroup.ID
+            }
+	        # ASSOCIATEOBJTYPE: 14 - Host group, 256 - LUN group, 257 - Port group
+            $result = Invoke-RestMethod -Method "Post" -Uri $URI -Body (ConvertTo-Json $MappingViewAssocForJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
+            if ($result -and ($result.error.code -eq 0)) {
+              if (-not $Silent) {
+			    write-host "Mapping view association $($CurrentName) added" -foreground "Green"
+			  }
+              $RetVal += $result.data
+            }
+            else {
+			  if (-not $Silent) {
+			    write-host "ERROR (Assign-OceanStorLUNGroupToSimilarMappingView): Failed to associate LUN Group ($($CurrentName), ID $($CurrentLUNGroup.ID)) and Mapped view ($($CurrentName), ID $($CurrentMappedView.ID))" -foreground "Red"
+              }
+            }
+
+		  }
+		} # else (-not ( $CurrentMappedView ))
+	  } # else (-not (  $CurrentLUNGroup  ))
+	$ProcessedLUNGroup += 1
   } #foreach $CurrentName
+  
   $URI = $RESTURI  + "sessions"
-  $SessionCloseResult = Invoke-RestMethod -Method Delete $URI -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
+  $SessionCloseResult = Invoke-RestMethod -Method Delete $URI -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession  
+  }
   
   Return($RetVal)
 }
