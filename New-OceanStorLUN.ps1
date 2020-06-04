@@ -1,15 +1,16 @@
-Function New-OceanStorLUNGroup {
-  [CmdletBinding(DefaultParameterSetName="LUNGroupName")]
+Function New-OceanStorLUN {
+  [CmdletBinding(DefaultParameterSetName="LUNName")]
   PARAM (
-    [PARAMETER(Mandatory=$True, Position=0,HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='LUNGroupName')][String]$OceanStor,
-    [PARAMETER(Mandatory=$False,Position=1,HelpMessage = "Port",ParameterSetName='LUNGroupName')][int]$Port=8088,	
-    [PARAMETER(Mandatory=$True, Position=2,HelpMessage = "Username",ParameterSetName='LUNGroupName')][String]$Username,
-    [PARAMETER(Mandatory=$True, Position=3,HelpMessage = "Password",ParameterSetName='LUNGroupName')][String]$Password,
-    [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='LUNGroupName')][int]$Scope=0,
-    [PARAMETER(Mandatory=$False,Position=8,HelpMessage = "WhatIf - if mentioned then do nothing, only print message",ParameterSetName='LUNGroupName')][switch]$WhatIf,	
-    [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='LUNGroupName')][bool]$Silent=$true,
-    [PARAMETER(Mandatory=$False,Position=7,HelpMessage = "Application Type (0 - other, 1 - oracle, 2 - exchange, 3 - sqlserver, 4 - vmware, 5 - hyper-V)",ParameterSetName='LUNGroupName')][int]$AppType=0,
-    [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "LUN Group name",ParameterSetName='LUNGroupName')][Parameter(ValueFromRemainingArguments=$true)][String[]]$Name = $null
+    [PARAMETER(Mandatory=$True, Position=0,HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='LUNName')][String]$OceanStor,
+    [PARAMETER(Mandatory=$False,Position=1,HelpMessage = "Port",ParameterSetName='LUNName')][int]$Port=8088,	
+    [PARAMETER(Mandatory=$True, Position=2,HelpMessage = "Username",ParameterSetName='LUNName')][String]$Username,
+    [PARAMETER(Mandatory=$True, Position=3,HelpMessage = "Password",ParameterSetName='LUNName')][String]$Password,
+    [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='LUNName')][int]$Scope=0,
+    [PARAMETER(Mandatory=$False,Position=8,HelpMessage = "WhatIf - if mentioned then do nothing, only print message",ParameterSetName='LUNName')][switch]$WhatIf,	
+    [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='LUNName')][bool]$Silent=$true,
+    [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "Storage Pool Name",ParameterSetName='LUNName')][String]$StoragePoolName,
+    [PARAMETER(Mandatory=$True, Position=7,HelpMessage = "Size GB",ParameterSetName='LUNName')][int]$Size,
+    [PARAMETER(Mandatory=$True, Position=8,HelpMessage = "LUN name",ParameterSetName='LUNName')][Parameter(ValueFromRemainingArguments=$true)][String[]]$Name = $null
   )
   $RetVal = $null
  
@@ -31,60 +32,74 @@ Function New-OceanStorLUNGroup {
   # --- end TLS and Cert preparation ---
   # Caution! Any self-signed and invalid certificate are truated furthermore!
   
-  $body = @{username = "$($Username)";password = "$($Password)";scope = $Scope}
+  # -Name for Get-OceanStorStoragePool is case insensitive
+  $StoragePool   = Get-OceanStorStoragePool -OceanStor $OceanStor -Port $Port -Username $Username -Password $Password -Scope $Scope -Silent $True -Name $StoragePoolName
   
-  $BaseRESTURI = "https://" + $OceanStor + ":" + $Port +"/deviceManager/rest/"
-  $SessionURI = $BaseRESTURI  + "xxxxx/sessions"
-
-  $logonsession = Invoke-RestMethod -Method "Post" -Uri $SessionURI -Body (ConvertTo-Json $body) -SessionVariable WebSession
-  
-  if ($logonsession -and ($logonsession.error.code -eq 0)) {
-    $sessionid = $logonsession.data.deviceid
-    $iBaseToken = $logonsession.data.iBaseToken
-    $base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $($Username),'''$($Password''')))
-    $header = @{Authorization = "Basic $base64AuthInfo";iBaseToken = $iBaseToken}
-    $RESTURI = $BaseRESTURI  + $sessionid +"/"
-
-    $UserCredentials = New-Object System.Management.Automation.PsCredential("$($Username)",$(ConvertTo-SecureString -String "$($Password)" -AsPlainText -force))
-
-	$URI = $RESTURI  + "lungroup"
-
-    $RetVal = @() 
-
-	$ProcessedLUNGroup = 0
-    foreach ($CurrentName in $Name) {
-      if (-not $Silent) {
-        $PercentCompletedLUNGroup = [math]::Floor($ProcessedLUNGroup / $Name.Count * 100)
-	     Write-Progress -Activity "Adding LUN Groups" -CurrentOperation "$($CurrentName)" -PercentComplete $PercentCompletedLUNGroup
-	  }
-      
-	  $LUNGroupForJSON = @{
-        NAME = $CurrentName
-	    APPTYPE = $AppType
-      }
-
-      if (-not $WhatIf) {	
-        $result = Invoke-RestMethod -Method "Post" -Uri $URI -Body (ConvertTo-Json $LUNGroupForJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
-        if ($result -and ($result.error.code -eq 0)) {
-	      $RetVal += $result.data		
-        }
-        else {
-          $RetVal += $null
-	      if (-not $Silent) {
-	        write-host "ERROR (New-OceanStorLUNGroup): $($result.error.code); $($result.error.description)" -foreground "Red"
-	      }
-        }
-	  }
-	  else {
-	    write-host "WhatIf (New-OceanStorLUNGroup): Create LUN Group with name $($CurrentName) and application type $($AppType)" -foreground "Green"
-	  }
-      $ProcessedLUNGroup += 1
+  if ((-not $StoragePool) -or ($StoragePool.Count -gt 1)) {
+    if (-not $Silent) {
+      write-host "ERROR (New-OceanStorLUN): Wrong storage pool specified (searching by name $($StoragePoolName) got $($StoragePool))" -foreground "Red"
     }
+  }
+  else {  
+    $body = @{username = "$($Username)";password = "$($Password)";scope = $Scope}
+    
+    $BaseRESTURI = "https://" + $OceanStor + ":" + $Port +"/deviceManager/rest/"
+    $SessionURI = $BaseRESTURI  + "xxxxx/sessions"
   
-  } #foreach $CurrentName
-  $URI = $RESTURI  + "sessions"
-  $SessionCloseResult = Invoke-RestMethod -Method Delete $URI -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
+    $logonsession = Invoke-RestMethod -Method "Post" -Uri $SessionURI -Body (ConvertTo-Json $body) -SessionVariable WebSession
+    
+    if ($logonsession -and ($logonsession.error.code -eq 0)) {
+      $sessionid = $logonsession.data.deviceid
+      $iBaseToken = $logonsession.data.iBaseToken
+      $base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $($Username),'''$($Password''')))
+      $header = @{Authorization = "Basic $base64AuthInfo";iBaseToken = $iBaseToken}
+      $RESTURI = $BaseRESTURI  + $sessionid +"/"
   
-  Return($RetVal)
+      $UserCredentials = New-Object System.Management.Automation.PsCredential("$($Username)",$(ConvertTo-SecureString -String "$($Password)" -AsPlainText -force))
+  
+  	  $URI = $RESTURI  + "lun"
+  
+      $RetVal = @() 
+  
+  	  $ProcessedLUN = 0
+      foreach ($CurrentName in $Name) {
+        if (-not $Silent) {
+          $PercentCompletedLUN = [math]::Floor($ProcessedLUN / $Name.Count * 100)
+  	      Write-Progress -Activity "Adding LUN " -CurrentOperation "$($CurrentName)" -PercentComplete $PercentCompletedLUN
+  	    }
+        
+  	    $LUNForJSON = @{
+          NAME = $CurrentName
+		  ALLOCTYPE = 0 # 0 - Thick, 1 - Thin
+  		  PARENTID = $StoragePool.ID
+  	      CAPACITY = 2097152 * $Size
+		  MSGRETURNTYPE = 1 # 1 - Syncronous, 0 - Async
+		  DATATRANSFERPOLICY = 1 # 0 - no migration, 1 - automatic migration, 2 - migration to a higher performance tier, 3 - migration to a lower performance tier
+        }
+  
+        if (-not $WhatIf) {	
+          $result = Invoke-RestMethod -Method "Post" -Uri $URI -Body (ConvertTo-Json $LUNForJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
+          if ($result -and ($result.error.code -eq 0)) {
+  	        $RetVal += $result.data		
+          }
+          else {
+            $RetVal += $null
+  	        if (-not $Silent) {
+  	          write-host "ERROR (New-OceanStorLUN): $($result.error.code); $($result.error.description)" -foreground "Red"
+  	        }
+          }
+  	    }
+  	    else {
+  	      write-host "WhatIf (New-OceanStorLUN):: Create LUN with name $($CurrentName) and size $($Size) GB in Storage pool $($StoragePoolName) (pool ID $($StoragePool.ID)) " -foreground "Green"
+  	    }
+        $ProcessedLUN += 1    
+      } #foreach $CurrentName
+      
+	  $URI = $RESTURI  + "sessions"
+      $SessionCloseResult = Invoke-RestMethod -Method Delete $URI -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
+    
+    } # if ($logonsession -and ($logonsession.error.code -eq 0)) {
+    Return($RetVal)
+  } # if ((-not $StoragePool) -or ($StoragePool.Count -gt 1)) {
 }
 
