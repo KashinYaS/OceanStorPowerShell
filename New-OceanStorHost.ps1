@@ -90,7 +90,7 @@ Function New-OceanStorHost {
           OPERATIONSYSTEM = $OPERATIONSYSTEM
         }
 		if ($WhatIf) {
-		   write-host "WhatIf (New-OceanStorHost): Add host $($ActualHost.Name)" -foreground "Green" 
+		   write-host "WhatIf (New-OceanStorHost): Add host $($HostName)" -foreground "Green" 
 		}
 		else {
           $result = Invoke-RestMethod -Method "Post" -Uri $URI -Body (ConvertTo-Json $HostForJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession

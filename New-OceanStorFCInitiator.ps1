@@ -10,7 +10,7 @@ Function New-OceanStorFCInitiator {
     [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='default')][bool]$Silent=$true,
     [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "Initiator's Port WWN",ParameterSetName='default')][Parameter(ValueFromRemainingArguments=$true)][String[]]$pWWN = $null
   )
-  $RetVal = $null
+  $RetVal = @()
  
   # --- prepare to connect with TLS 1.2 and ignore self-signed certificate of OceanStor ---
   [Net.ServicePointManager]::SecurityProtocol =[Net.SecurityProtocolType]::Tls12
