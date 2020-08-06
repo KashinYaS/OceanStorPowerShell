@@ -1,14 +1,14 @@
-Function Assign-OceanStorLUNGroupToSimilarMappingView {
-  [CmdletBinding(DefaultParameterSetName="LUNGroupName")]
+Function Assign-OceanStorHostGroupToSimilarMappingView {
+  [CmdletBinding(DefaultParameterSetName="HostGroupName")]
   PARAM (
-    [PARAMETER(Mandatory=$True, Position=0,HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='LUNGroupName')][String]$OceanStor,
-    [PARAMETER(Mandatory=$False,Position=1,HelpMessage = "Port",ParameterSetName='LUNGroupName')][int]$Port=8088,	
-    [PARAMETER(Mandatory=$True, Position=2,HelpMessage = "Username",ParameterSetName='LUNGroupName')][String]$Username,
-    [PARAMETER(Mandatory=$True, Position=3,HelpMessage = "Password",ParameterSetName='LUNGroupName')][String]$Password,
-    [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='LUNGroupName')][int]$Scope=0,
-    [PARAMETER(Mandatory=$False,Position=8,HelpMessage = "WhatIf - if mentioned then do nothing, only print message",ParameterSetName='LUNGroupName')][switch]$WhatIf,	
-    [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='LUNGroupName')][bool]$Silent=$true,
-    [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "LUN Group and Mapping view name",ParameterSetName='LUNGroupName')][Parameter(ValueFromRemainingArguments=$true)][String[]]$Name = $null
+    [PARAMETER(Mandatory=$True, Position=0,HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='HostGroupName')][String]$OceanStor,
+    [PARAMETER(Mandatory=$False,Position=1,HelpMessage = "Port",ParameterSetName='HostGroupName')][int]$Port=8088,	
+    [PARAMETER(Mandatory=$True, Position=2,HelpMessage = "Username",ParameterSetName='HostGroupName')][String]$Username,
+    [PARAMETER(Mandatory=$True, Position=3,HelpMessage = "Password",ParameterSetName='HostGroupName')][String]$Password,
+    [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='HostGroupName')][int]$Scope=0,
+    [PARAMETER(Mandatory=$False,Position=8,HelpMessage = "WhatIf - if mentioned then do nothing, only print message",ParameterSetName='HostGroupName')][switch]$WhatIf,	
+    [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='HostGroupName')][bool]$Silent=$true,
+    [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "Host Group and Mapping view name",ParameterSetName='HostGroupName')][Parameter(ValueFromRemainingArguments=$true)][String[]]$Name = $null
   )
   $RetVal = $null
  
@@ -30,8 +30,8 @@ Function Assign-OceanStorLUNGroupToSimilarMappingView {
   # --- end TLS and Cert preparation ---
   # Caution! Any self-signed and invalid certificate are truated furthermore!
 
-  # Get LUN Groups and mapping views needed to associate
-  $LUNGroups   = Get-OceanStorLUNGroup    -OceanStor $OceanStor -Port $Port -Username $Username -Password $Password -Scope $Scope -Silent $True | where {$Name.ToUpper() -contains $_.NAME.ToUpper()}
+  # Get Host Groups and mapping views needed to associate
+  $HostGroups   = Get-OceanStorHostGroup   -OceanStor $OceanStor -Port $Port -Username $Username -Password $Password -Scope $Scope -Silent $True | where {$Name.ToUpper() -contains $_.NAME.ToUpper()}
   $MappingViews = Get-OceanStorMappingView -OceanStor $OceanStor -Port $Port -Username $Username -Password $Password -Scope $Scope -Silent $True | where {$Name.ToUpper() -contains $_.NAME.ToUpper()}
     
   $body = @{username = "$($Username)";password = "$($Password)";scope = $Scope}
@@ -54,56 +54,56 @@ Function Assign-OceanStorLUNGroupToSimilarMappingView {
 
     $RetVal = @() 
 
-	$ProcessedLUNGroup = 0
+	$ProcessedHostGroup = 0
     foreach ($CurrentName in $Name) {
       if (-not $Silent) {
-        $PercentCompletedLUNGroup = [math]::Floor($ProcessedLUNGroup / $Name.Count * 100)
-	    Write-Progress -Activity "Adding LUN Groups" -CurrentOperation "$($CurrentName)" -PercentComplete $PercentCompletedLUNGroup
+        $PercentCompletedHostGroup = [math]::Floor($ProcessedHostGroup / $Name.Count * 100)
+	    Write-Progress -Activity "Adding Host Groups" -CurrentOperation "$($CurrentName)" -PercentComplete $PercentCompletedHostGroup
 	  }
-	  $CurrentLUNGroup = $LUNGroups | where {$_.NAME.ToUpper() -eq $CurrentName.ToUpper()}
-      if (-not ( $CurrentLUNGroup )) {
-	    # No actual LUN Group found
+	  $CurrentHostGroup = $HostGroups | where {$_.NAME.ToUpper() -eq $CurrentName.ToUpper()}
+      if (-not ( $CurrentHostGroup )) {
+	    # No actual Host Group found
 		if (-not $Silent) {
-		  write-host "ERROR (Assign-OceanStorLUNGroupToSimilarMappingView): LUN group $($CurrentName) not found - skipping association" -foreground "Red"
+		  write-host "ERROR (Assign-OceanStorHostGroupToSimilarMappingView): Host Group $($CurrentName) not found - skipping association" -foreground "Red"
 		}
 	  }
 	  else {
-	    # LUN group found, let's check Mapping View
+	    # Host Group found, let's check Mapping View
 		$CurrentMappingView = $MappingViews | where {$_.NAME.ToUpper() -eq $CurrentName.ToUpper()}
 		if (-not ( $CurrentMappingView )) {
 		  if (-not $Silent) {
-		    write-host "ERROR (Assign-OceanStorLUNGroupToSimilarMappingView): Mapping View $($CurrentName) not found - skipping association" -foreground "Red"
+		    write-host "ERROR (Assign-OceanStorHostGroupToSimilarMappingView): Mapping View $($CurrentName) not found - skipping association" -foreground "Red"
 		  }
         }
 		else {
-		  # LUN group and Mapping View exist - associate them
+		  # Host Group and Mapping View exist - associate them
 		  if ($WhatIf) {
-		    write-host "WhatIf (Assign-OceanStorLUNGroupToSimilarMappingView): Associate LUN Group ($($CurrentName), ID $($CurrentLUNGroup.ID)) and Mapping View ($($CurrentName), ID $($CurrentMappingView.ID))" -foreground "Green"
+		    write-host "WhatIf (Assign-OceanStorHostGroupToSimilarMappingView): Associate Host Group ($($CurrentName), ID $($CurrentHostGroup.ID)) and Mapping View ($($CurrentName), ID $($CurrentMappingView.ID))" -foreground "Green"
 		  }
 		  else {
             $MappingViewAssocForJSON = @{
               ID = $CurrentMappingView.ID
-		      ASSOCIATEOBJTYPE = 256
-		      ASSOCIATEOBJID = $CurrentLUNGroup.ID
+		      ASSOCIATEOBJTYPE = 14
+		      ASSOCIATEOBJID = $CurrentHostGroup.ID
             }
 	        # ASSOCIATEOBJTYPE: 14 - Host group, 256 - LUN group, 257 - Port group
             $result = Invoke-RestMethod -Method "Post" -Uri $URI -Body (ConvertTo-Json $MappingViewAssocForJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
             if ($result -and ($result.error.code -eq 0)) {
               if (-not $Silent) {
-			    write-host "LUN Group ($($CurrentName), ID $($CurrentLUNGroup.ID)) associated with Mapping View ($($CurrentName), ID $($CurrentMappingView.ID))" -foreground "Green"
+			    write-host "Host Group ($($CurrentName), ID $($CurrentHostGroup.ID)) associated with Mapping View ($($CurrentName), ID $($CurrentMappingView.ID)) " -foreground "Green"
 			  }
               $RetVal += $result.data
             }
             else {
 			  if (-not $Silent) {
-			    write-host "ERROR (Assign-OceanStorLUNGroupToSimilarMappingView): Failed to associate LUN Group ($($CurrentName), ID $($CurrentLUNGroup.ID)) and Mapping View ($($CurrentName), ID $($CurrentMappingView.ID)): $($result.error.code); $($result.error.description)" -foreground "Red"
+			    write-host "ERROR (Assign-OceanStorHostGroupToSimilarMappingView): Failed to associate Host Group ($($CurrentName), ID $($CurrentHostGroup.ID)) and Mapping View ($($CurrentName), ID $($CurrentMappingView.ID)): $($result.error.code); $($result.error.description)" -foreground "Red"
               }
             }
 
 		  }
 		} # else (-not ( $CurrentMappingView ))
-	  } # else (-not (  $CurrentLUNGroup  ))
-	  $ProcessedLUNGroup += 1
+	  } # else (-not (  $CurrentHostGroup  ))
+	  $ProcessedHostGroup += 1
     } #foreach $CurrentName
   
     $URI = $RESTURI  + "sessions"
