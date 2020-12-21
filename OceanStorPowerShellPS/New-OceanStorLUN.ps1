@@ -8,32 +8,24 @@ Function New-OceanStorLUN {
     [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='LUNName')][int]$Scope=0,
     [PARAMETER(Mandatory=$False,Position=8,HelpMessage = "WhatIf - if mentioned then do nothing, only print message",ParameterSetName='LUNName')][switch]$WhatIf,	
     [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='LUNName')][bool]$Silent=$true,
-    [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "Storage Pool Name",ParameterSetName='LUNName')][String]$StoragePoolName,
-    [PARAMETER(Mandatory=$True, Position=7,HelpMessage = "Size GB",ParameterSetName='LUNName')][int]$Size,
-    [PARAMETER(Mandatory=$True, Position=8,HelpMessage = "LUN name",ParameterSetName='LUNName')][Parameter(ValueFromRemainingArguments=$true)][String[]]$Name = $null
+    [PARAMETER(Mandatory=$False,Position=6,HelpMessage = "Thin - if True then create Thin LUN. Thick LUN creation by default",ParameterSetName='LUNName')][bool]$Thin=$true,
+    [PARAMETER(Mandatory=$True, Position=7,HelpMessage = "Storage Pool Name",ParameterSetName='LUNName')][String]$StoragePoolName,
+    [PARAMETER(Mandatory=$True, Position=8,HelpMessage = "Size GB",ParameterSetName='LUNName')][int]$Size,
+    [PARAMETER(Mandatory=$True, Position=9,HelpMessage = "LUN name",ParameterSetName='LUNName')][Parameter(ValueFromRemainingArguments=$true)][String[]]$Name = $null
   )
   $RetVal = $null
  
-  # --- prepare to connect with TLS 1.2 and ignore self-signed certificate of OceanStor ---
-  [Net.ServicePointManager]::SecurityProtocol =[Net.SecurityProtocolType]::Tls12
-
-  Add-Type @"
-    using System.Net;
-    using System.Security.Cryptography.X509Certificates;
-    public class TrustAllCertsPolicy : ICertificatePolicy {
-        public bool CheckValidationResult(
-            ServicePoint srvPoint, X509Certificate certificate,
-            WebRequest request, int certificateProblem) {
-            return true;
-        }
-    }
-"@ -ea SilentlyContinue -wa SilentlyContinue    
-  [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
-  # --- end TLS and Cert preparation ---
-  # Caution! Any self-signed and invalid certificate are truated furthermore!
+  Fix-OceanStorConnection
   
   # -Name for Get-OceanStorStoragePool is case insensitive
   $StoragePool   = Get-OceanStorStoragePool -OceanStor $OceanStor -Port $Port -Username $Username -Password $Password -Scope $Scope -Silent $True -Name $StoragePoolName
+
+  if ($Thin) {
+    $AllocType = 1 # Thin LUN
+  }
+  else {
+    $AllocType = 0 # Thick LUN
+  }  
   
   if ((-not $StoragePool) -or ($StoragePool.Count -gt 1)) {
     if (-not $Silent) {
@@ -70,7 +62,7 @@ Function New-OceanStorLUN {
         
   	    $LUNForJSON = @{
           NAME = $CurrentName
-		  ALLOCTYPE = 0 # 0 - Thick, 1 - Thin
+		  ALLOCTYPE = $AllocType # 0 - Thick, 1 - Thin
   		  PARENTID = $StoragePool.ID
   	      CAPACITY = 2097152 * $Size
 		  MSGRETURNTYPE = 1 # 1 - Syncronous, 0 - Async
@@ -90,7 +82,12 @@ Function New-OceanStorLUN {
           }
   	    }
   	    else {
-  	      write-host "WhatIf (New-OceanStorLUN):: Create LUN with name $($CurrentName) and size $($Size) GB in Storage pool $($StoragePoolName) (pool ID $($StoragePool.ID)) " -foreground "Green"
+		  if ($Thin) {
+  	        write-host "WhatIf (New-OceanStorLUN):: Create thin LUN with name $($CurrentName) and size $($Size) GB in Storage pool $($StoragePoolName) (pool ID $($StoragePool.ID)) " -foreground "Green"
+		  }
+		  else {
+  	        write-host "WhatIf (New-OceanStorLUN):: Create thick LUN with name $($CurrentName) and size $($Size) GB in Storage pool $($StoragePoolName) (pool ID $($StoragePool.ID)) " -foreground "Green"
+		  }		  
   	    }
         $ProcessedLUN += 1    
       } #foreach $CurrentName
