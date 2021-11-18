@@ -29,27 +29,38 @@ Function Get-OceanStorReplicationPair {
 
     $UserCredentials = New-Object System.Management.Automation.PsCredential("$($Username)",$(ConvertTo-SecureString -String "$($Password)" -AsPlainText -force))
 
-    # --- getting existing hosts 
-    if (-not $ID) {
-	  $URI = $RESTURI  + "REPLICATIONPAIR"
-	}
-	else {
-	  if ( $ID.Count -eq 1 ) {
-	    $URI = $RESTURI  + "REPLICATIONPAIR/" + $ID
+    switch ( $PSCmdlet.ParameterSetName )
+    {
+      'ID'    {
+	    if ( $ID.Count -eq 1 ) {
+	      $URI = $RESTURI  + "REPLICATIONPAIR/" + $ID
+	    }
+	    else {
+          $URI = $RESTURI  + "REPLICATIONPAIR"
+	    }
 	  }
-	  else {
-        $URI = $RESTURI  + "REPLICATIONPAIR"
+	  default { 
+	    $URI = $RESTURI  + "REPLICATIONPAIR"
 	  }
-	}
+    }
 	
     $result = Invoke-RestMethod -Method "Get" $URI -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
     if ($result -and ($result.error.code -eq 0)) {
-	  if ( (-not $ID) -or ( $ID.Count -eq 1 )) { # all objects of only one object
-	    $RetVal = $result.data		
-	  }
-	  else { # several objects specified - need to select some of them
-	    $RetVal = $result.data | where { $ID -contains $_.ID }
-	  }
+      switch ( $PSCmdlet.ParameterSetName )
+      {
+        'ID' {
+	       if ( $ID.Count -eq 1 ) { 
+	         $RetVal = $result.data		
+	       }
+	       else { # several objects specified - need to select some of them
+	         $RetVal = $result.data | where { $ID -contains $_.ID }
+	       }		  
+		}
+	    default { 
+	      $RetVal = $result.data 
+	    }
+      }
+				
     }
     else {
       $RetVal = $null

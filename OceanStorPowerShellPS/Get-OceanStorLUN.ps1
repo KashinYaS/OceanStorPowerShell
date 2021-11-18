@@ -30,25 +30,28 @@ Function Get-OceanStorLUN {
 
     $UserCredentials = New-Object System.Management.Automation.PsCredential("$($Username)",$(ConvertTo-SecureString -String "$($Password)" -AsPlainText -force))
 
-    # --- getting existing hosts 
-    if (-not $ID) {
-	  $URI = $RESTURI  + "lun"
-	}
-	else {
-	  $URI = $RESTURI  + "lun/" + $ID
-	}
+    switch ( $PSCmdlet.ParameterSetName )
+    {
+      'ID' {  $URI = $RESTURI  + "lun/" + $ID }
+	  default { 
+	    $URI = $RESTURI  + "lun" 
+	  }
+    }
 	
     $result = Invoke-RestMethod -Method "Get" $URI -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
     if ($result -and ($result.error.code -eq 0)) {
-      if (-not $Name) {
-	    $RetVal = $result.data		
-	  }
-	  else {
-	    $RetVal = $result.data | where {$_.Name.ToUpper() -eq $Name.ToUpper()}
-		if ((-not $RetVal) -and (-not $Silent)) {
-		  write-host "ERROR (Get-OceanStorLUN): LUN $($Name) not found" -foreground "Red"
+      switch ( $PSCmdlet.ParameterSetName )
+      {
+        'LUNName' {  
+	      $RetVal = $result.data | where {$_.Name.ToUpper() -eq $Name.ToUpper()}
+		  if ((-not $RetVal) -and (-not $Silent)) {
+		    write-host "ERROR (Get-OceanStorLUN): LUN $($Name) not found" -foreground "Red"
+		  }
 		}
-	  }
+	    default { 
+	      $RetVal = $result.data 
+	    }
+      }		
     }
     else {
       $RetVal = $null
