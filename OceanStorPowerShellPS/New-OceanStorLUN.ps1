@@ -28,7 +28,7 @@ Function New-OceanStorLUN {
     $AllocType = 0 # Thick LUN
   }  
   
-  if ($AppTypeName -eq '') {
+  if ($AppTypeName -eq 'Default') {
 	$ApplicationTypeId =0
   }
   else {

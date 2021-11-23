@@ -93,7 +93,7 @@ Function Copy-OceanStorLUN {
 		     write-host "WhatIf (Copy-OceanStorLUN): Creating LUN $($SourceLUN.NAME) on a Destination OceanStor" -foreground "Yellow"
 		   }
 		   else {
-			 $LUNSizeGB = [math]::round( $SourceLUN.CAPACITY / 1048576, 0)
+			 $LUNSizeGB = [math]::round( $SourceLUN.CAPACITY / 2097152, 0)
              if ($SourceLUN.ALLOCTYPE -eq 1) { $ThinLun = $true } else {$ThinLun = $false }
 		     $LUN = New-OceanStorLUN -OceanStor $DestinationOceanStor -Port $Port -Username $Username -Password $Password -Scope $Scope -Silent $True -Name $($SourceLUN.NAME) -StoragePoolName $($SourceLUN.PARENTNAME) -Size $LUNSizeGB -Thin $ThinLun -AppTypeName $($SourceLUN.WORKLOADTYPENAME)
 			 if ($LUN) {
