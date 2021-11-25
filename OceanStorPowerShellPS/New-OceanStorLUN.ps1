@@ -103,10 +103,10 @@ Function New-OceanStorLUN {
   	    }
   	    else {
 		  if ($Thin) {
-  	        write-host "WhatIf (New-OceanStorLUN):: Create thin LUN with name $($CurrentName) and size $($Size) GB in Storage pool $($StoragePoolName) (pool ID $($StoragePool.ID)) " -foreground "Green"
+  	        write-host "WhatIf (New-OceanStorLUN): Create thin LUN with name $($CurrentName) and size $($Size) GB in Storage pool $($StoragePoolName) (pool ID $($StoragePool.ID)) with Application Type $($AppTypeName) (ID $($ApplicationTypeId))" -foreground "Green"
 		  }
 		  else {
-  	        write-host "WhatIf (New-OceanStorLUN):: Create thick LUN with name $($CurrentName) and size $($Size) GB in Storage pool $($StoragePoolName) (pool ID $($StoragePool.ID)) " -foreground "Green"
+  	        write-host "WhatIf (New-OceanStorLUN): Create thick LUN with name $($CurrentName) and size $($Size) GB in Storage pool $($StoragePoolName) (pool ID $($StoragePool.ID)) with Application Type $($AppTypeName) (ID $($ApplicationTypeId))" -foreground "Green"
 		  }		  
   	    }
         $ProcessedLUN += 1    
