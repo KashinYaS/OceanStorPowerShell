@@ -58,13 +58,13 @@ Function Assign-OceanStorLUNToLUNGroup {
 		$CurrentLUN = $LUNs
 		if (-not ( $CurrentLUN )) {
 		  if (-not $Silent) {
-		    write-host "ERROR (Assign-OceanStorLUNToLUNGroup): LUN $($CurrentBootLUNName) not found - skipping association" -foreground "Red"
+		    write-host "ERROR (Assign-OceanStorLUNToLUNGroup): LUN $($CurrentLUN.Name) not found - skipping association" -foreground "Red"
 		  }
         }
 		else {
 		  # LUN group and LUN exist - associate them
 		  if ($WhatIf) {
-		    write-host "WhatIf (Assign-OceanStorLUNToLUNGroup): Associate LUN Group ($($CurrentName), ID $($CurrentLUNGroup.ID)) and LUN ($($CurrentBootLUNName), ID $($CurrentLUN.ID))" -foreground "Green"
+		    write-host "WhatIf (Assign-OceanStorLUNToLUNGroup): Associate LUN Group ($($CurrentName), ID $($CurrentLUNGroup.ID)) and LUN ($($CurrentLUN.Name), ID $($CurrentLUN.ID))" -foreground "Green"
 		  }
 		  else {
             $LUNGroupAssocForJSON = @{
@@ -76,13 +76,13 @@ Function Assign-OceanStorLUNToLUNGroup {
             $result = Invoke-RestMethod -Method "Post" -Uri $URI -Body (ConvertTo-Json $LUNGroupAssocForJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
             if ($result -and ($result.error.code -eq 0)) {
               if (-not $Silent) {
-			    write-host "LUN $($CurrentBootLUNName) added to LUN Group $($CurrentName)" -foreground "Green"
+			    write-host "LUN $($CurrentLUN.Name) added to LUN Group $($CurrentName)" -foreground "Green"
 			  }
               $RetVal += $result.data
             }
             else {
 			  if (-not $Silent) {
-			    write-host "ERROR (Assign-OceanStorLUNGroupToSimilarMappingView): Failed to associate LUN Group ($($CurrentName), ID $($CurrentLUNGroup.ID)) and LUN ($($CurrentBootLUNName), ID $($CurrentLUN.ID))" -foreground "Red"
+			    write-host "ERROR (Assign-OceanStorLUNGroupToSimilarMappingView): Failed to associate LUN Group ($($CurrentName), ID $($CurrentLUNGroup.ID)) and LUN ($($CurrentLUN.Name), ID $($CurrentLUN.ID))" -foreground "Red"
               }
             }
 

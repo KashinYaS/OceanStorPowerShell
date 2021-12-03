@@ -71,7 +71,7 @@ Function Assign-OceanStorHostGroupToSimilarMappingView {
 		      ASSOCIATEOBJID = $CurrentHostGroup.ID
             }
 	        # ASSOCIATEOBJTYPE: 14 - Host group, 256 - LUN group, 257 - Port group
-            $result = Invoke-RestMethod -Method "Post" -Uri $URI -Body (ConvertTo-Json $MappingViewAssocForJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
+            $result = Invoke-RestMethod -Method "PUT" -Uri $URI -Body (ConvertTo-Json $MappingViewAssocForJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
             if ($result -and ($result.error.code -eq 0)) {
               if (-not $Silent) {
 			    write-host "Host Group ($($CurrentName), ID $($CurrentHostGroup.ID)) associated with Mapping View ($($CurrentName), ID $($CurrentMappingView.ID)) " -foreground "Green"

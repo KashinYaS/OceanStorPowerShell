@@ -1,14 +1,15 @@
 Function Get-OceanStorHostGroup {
   [CmdletBinding(DefaultParameterSetName="Default")]
   PARAM (
-    [PARAMETER(Mandatory=$True, Position=0,HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='HostGroupName')][String]$OceanStor,
-    [PARAMETER(Mandatory=$False,Position=1,HelpMessage = "Port",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='HostGroupName')][int]$Port=8088,	
-    [PARAMETER(Mandatory=$True, Position=2,HelpMessage = "Username",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='HostGroupName')][String]$Username,
-    [PARAMETER(Mandatory=$True, Position=3,HelpMessage = "Password",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='HostGroupName')][String]$Password,
-    [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='HostGroupName')][int]$Scope=0,
-    [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='HostGroupName')][bool]$Silent=$true,
-    [PARAMETER(Mandatory=$True,Position=6,HelpMessage = "Host group name",ParameterSetName='HostGroupName')][String]$Name = $null,
-    [PARAMETER(Mandatory=$True,Position=6,HelpMessage = "Host group ID",ParameterSetName='ID')][int]$ID = $null
+    [PARAMETER(Mandatory=$True, Position=0,HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='HostGroupName')][PARAMETER(ParameterSetName='HostID')][String]$OceanStor,
+    [PARAMETER(Mandatory=$False,Position=1,HelpMessage = "Port",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='HostGroupName')][PARAMETER(ParameterSetName='HostID')][int]$Port=8088,	
+    [PARAMETER(Mandatory=$True, Position=2,HelpMessage = "Username",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='HostGroupName')][PARAMETER(ParameterSetName='HostID')][String]$Username,
+    [PARAMETER(Mandatory=$True, Position=3,HelpMessage = "Password",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='HostGroupName')][PARAMETER(ParameterSetName='HostID')][String]$Password,
+    [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='HostGroupName')][PARAMETER(ParameterSetName='HostID')][int]$Scope=0,
+    [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='HostGroupName')][PARAMETER(ParameterSetName='HostID')][bool]$Silent=$true,
+    [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "Host group name",ParameterSetName='HostGroupName')][String]$Name = $null,
+    [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "Host group ID",ParameterSetName='ID')][int]$ID = $null,
+    [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "Member Host ID",ParameterSetName='HostID')][int]$HostID = $null	
   )
   $RetVal = $null
  
@@ -33,6 +34,9 @@ Function Get-OceanStorHostGroup {
     switch ( $PSCmdlet.ParameterSetName )
     {
       'ID' { $URI = $RESTURI  + "hostgroup/" + $ID }
+	  'HostID' {
+	    $URI = $RESTURI  + "hostgroup/associate?ASSOCIATEOBJTYPE=21&ASSOCIATEOBJID=" + $HostID
+	  }	  
 	  default { 
 	    $URI = $RESTURI  + "hostgroup"
 	  }
