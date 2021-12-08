@@ -82,13 +82,13 @@ Function Assign-OceanStorHostToHostGroup {
 			$result = Invoke-RestMethod -Method "Post" -Uri $URI -Body (ConvertTo-Json $HostAssociationForJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
 			if ($result -and ($result.error.code -eq 0)) {
 			  if (-not $Silent) {
-				write-host "Host ($($CurrentHost.Name), ID $($CurrentHost.ID)) succesfully associated with Host Group ($($CurrentName), ID $($CurrentHostGroup.ID))" -foreground "Green"
+				write-host "Host ($($CurrentHost.Name), ID $($CurrentHost.ID)) succesfully associated with Host Group ($($CurrentHostGroup.Name), ID $($CurrentHostGroup.ID))" -foreground "Green"
 			  }
 			  $RetVal += $result.data
 			}
 			else {
 			  if (-not $Silent) {
-				write-host "ERROR (Assign-OceanStorHostToHostGroup): Failed to associate Host ($($CurrentHost.Name), ID $($CurrentHost.ID)) and Host Group ($($CurrentName), ID $($CurrentHostGroup.ID)): $($result.error.description)" -foreground "Red"
+				write-host "ERROR (Assign-OceanStorHostToHostGroup): Failed to associate Host ($($CurrentHost.Name), ID $($CurrentHost.ID)) and Host Group ($($CurrentHostGroup.Name), ID $($CurrentHostGroup.ID)): $($result.error.description)" -foreground "Red"
 			  }
 			}
 		  }
