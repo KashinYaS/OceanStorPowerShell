@@ -1,13 +1,14 @@
 Function Get-OceanStorReplicationPair {
   [CmdletBinding(DefaultParameterSetName="Default")]
   PARAM (
-    [PARAMETER(Mandatory=$True, Position=0,HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][String]$OceanStor,
-    [PARAMETER(Mandatory=$False,Position=1,HelpMessage = "Port",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][int]$Port=8088,	
-    [PARAMETER(Mandatory=$True, Position=2,HelpMessage = "Username",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][String]$Username,
-    [PARAMETER(Mandatory=$True, Position=3,HelpMessage = "Password",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][String]$Password,
-    [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][int]$Scope=0,
-    [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][bool]$Silent=$true,
-    [PARAMETER(Mandatory=$False, Position=6,HelpMessage = "ReplicationPair ID",ParameterSetName='ID')][Parameter(ValueFromRemainingArguments=$true)][String[]]$ID = $null
+    [PARAMETER(Mandatory=$True,  Position=0,HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LunID')][String]$OceanStor,
+    [PARAMETER(Mandatory=$False, Position=1,HelpMessage = "Port",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LunID')][int]$Port=8088,	
+    [PARAMETER(Mandatory=$True,  Position=2,HelpMessage = "Username",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LunID')][String]$Username,
+    [PARAMETER(Mandatory=$True,  Position=3,HelpMessage = "Password",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LunID')][String]$Password,
+    [PARAMETER(Mandatory=$False, Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LunID')][int]$Scope=0,
+    [PARAMETER(Mandatory=$False, Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LunID')][bool]$Silent=$true,
+    [PARAMETER(Mandatory=$False, Position=6,HelpMessage = "ReplicationPair ID",ParameterSetName='ID')][Parameter(ValueFromRemainingArguments=$true)][String[]]$ID = $null,
+	[PARAMETER(Mandatory=$False, Position=6,HelpMessage = "Replicated LUN ID",ParameterSetName='LunID')][Parameter(ValueFromRemainingArguments=$true)][String[]]$LunID = $null
   )
   $RetVal = $null
  
@@ -54,6 +55,14 @@ Function Get-OceanStorReplicationPair {
 	       }
 	       else { # several objects specified - need to select some of them
 	         $RetVal = $result.data | where { $ID -contains $_.ID }
+	       }		  
+		}
+        'LunID' {
+	       if ( $LunID.Count -eq 1 ) { 
+	         $RetVal = $result.data	| where {($_.LOCALRESTYPE -eq 11) -and ($_.LOCALRESID -eq $LunID)}	
+	       }
+	       else { # several objects specified - need to select some of them
+	         $RetVal = $result.data | where {($_.LOCALRESTYPE -eq 11) -and ($LunID -contains $_.LOCALRESID)}
 	       }		  
 		}
 	    default { 
