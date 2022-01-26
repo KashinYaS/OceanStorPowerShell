@@ -7,12 +7,13 @@ Function Remove-OceanStorLUN {
     [PARAMETER(Mandatory=$True, Position=3,HelpMessage = "Password",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LUNName')][String]$Password,
     [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LUNName')][int]$Scope=0,
     [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LUNName')][bool]$Silent=$true,
-    [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "LUN name",ParameterSetName='LUNName')][String]$Name = $null,
-    [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "LUN ID",ParameterSetName='ID')][int]$ID = $null,
+    [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "LUN name",ParameterSetName='LUNName')][String[]]$Name = $null,
+    [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "LUN ID",ParameterSetName='ID')][int[]]$ID = $null,
 	[PARAMETER(Mandatory=$False,Position=7,HelpMessage = "Force delete. Specify to delete ALL LUNs",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LUNName')][switch]$Force,
 	[PARAMETER(Mandatory=$False,Position=8,HelpMessage = "Do not remove Replication Pair, only print message",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LUNName')][switch]$WhatIf
 	)
-  $RetVal = $null
+  
+  $RetVal = @()
  
   Fix-OceanStorConnection
  
@@ -58,7 +59,31 @@ Function Remove-OceanStorLUN {
       else {
 	    if (-not $Silent) {
 	      if ($LUNs.Count -gt 1) {
-		    write-host "INFO (Remove-OceanStorLUN) - Found $($LUNs.Count) LUNs to delete" -foreground "Green"
+			switch ( $PSCmdlet.ParameterSetName )
+            {
+               'ID'    {
+				 if ($LUNs.Count -lt $ID.Count) {
+				   $NotFoundLUNIDs = ($ID | where {$LUNs.ID -notcontains $_}) 
+				   write-host "WARNING (Remove-OceanStorLUN) - Found $($LUNs.Count) of $($ID.Count) LUNs to delete. $($NotFoundLUNIDs.Count) LUN(s) with ID(s) $($NotFoundLUNIDs -join ',') not found." -foreground "Yellow"
+				 }
+				 else {
+				   write-host "INFO (Remove-OceanStorLUN) - Found $($LUNs.Count) LUNs to delete" -foreground "Green"
+				 }
+ 	           }
+               'LUNName'    {
+				 if ($LUNs.Count -lt $Name.Count) {
+				   $NotFoundLUNNames = ($Name | where {$LUNs.Name -notcontains $_}) 
+				   write-host "WARNING (Remove-OceanStorLUN) - Found $($LUNs.Count) of $($Name.Count) LUNs to delete. $($NotFoundLUNNames.Count) LUN(s) with Name(s) $($NotFoundLUNNames -join ',') not found." -foreground "Yellow"
+				 }
+				 else {
+				   write-host "INFO (Remove-OceanStorLUN) - Found $($LUNs.Count) LUNs to delete" -foreground "Green"
+				 }
+				   
+               }
+			   default {
+				 write-host "INFO (Remove-OceanStorLUN) - Found $($LUNs.Count) LUNs to delete" -foreground "Green"
+			   }
+			}			   
 		  }
 		  else {
 		    write-host "INFO (Remove-OceanStorLUN) - Found LUN $($LUNs.ID)/$($LUNs.NAME) to delete" -foreground "Green"
@@ -101,13 +126,13 @@ Function Remove-OceanStorLUN {
 			    }
 			 
                 if ($result -and ($result.error.code -eq 0)) {
-	              $RetVal += $result
+	              [array]$RetVal += $result
 				  if (-not $Silent) {
 				    write-host "INFO (Remove-OceanStorLUN) - LUN $($LUN.ID)/$($LUN.NAME) Deleted" -foreground "Green" 
 				  }
                 }
                 else {
-		          $RetVal += $result
+		          [array]$RetVal += $result
 	              if (-not $Silent) {
 	                write-host "ERROR (Remove-OceanStorLUN): Cannot delete LUN $($LUN.ID)/$($LUN.NAME): $($result.error.code); $($result.error.description)" -foreground "Red"
 	              }

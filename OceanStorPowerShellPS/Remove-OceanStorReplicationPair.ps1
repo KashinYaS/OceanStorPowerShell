@@ -100,13 +100,13 @@ Function Remove-OceanStorReplicationPair {
 			  $result = Invoke-RestMethod -Method "Delete" $URI -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
 			 
               if ($result -and ($result.error.code -eq 0)) {
-	            $RetVal += $result
+	            [array]$RetVal += $result
 				if (-not $Silent) {
 				  write-host "INFO (Remove-OceanStorReplicationPair) - Replication pair $($RP.ID)/$($RP.LOCALRESNAME) Deleted" -foreground "Green" 
 				}
               }
               else {
-		        $RetVal += $result
+		        [array]$RetVal += $result
 	            if (-not $Silent) {
 	              write-host "ERROR (Remove-OceanStorReplicationPair): $($result.error.code); $($result.error.description)" -foreground "Red"
 	            }
