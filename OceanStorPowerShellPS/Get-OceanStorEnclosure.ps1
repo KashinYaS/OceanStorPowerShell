@@ -103,6 +103,7 @@ Function Get-OceanStorEnclosure {
       '25'  { $CurrentVal | Add-Member -NotePropertyName 'ModelNameEx' -NotePropertyValue '4U SAS 24-disk (3.5-inch) enclosure (new)' }
       '26'  { $CurrentVal | Add-Member -NotePropertyName 'ModelNameEx' -NotePropertyValue '2U 12 GB 25-slot 2.5-inch SAS controller enclosure' }
       '39'  { $CurrentVal | Add-Member -NotePropertyName 'ModelNameEx' -NotePropertyValue '4U 12 GB 75-slot 3.5-inch SAS disk enclosure' }
+	  '40'  { $CurrentVal | Add-Member -NotePropertyName 'ModelNameEx' -NotePropertyValue '2U 2-controller 25-slot 2.5-inch 12 Gbit/s SAS controller enclosure' }
       '65'  { $CurrentVal | Add-Member -NotePropertyName 'ModelNameEx' -NotePropertyValue '2U 12G 25 Slot 2.5 SSD Disks Enclosure	' }	
       '67'  { $CurrentVal | Add-Member -NotePropertyName 'ModelNameEx' -NotePropertyValue '2U 25-slot 2.5-inch SAS disk enclosure' }
       '69'  { $CurrentVal | Add-Member -NotePropertyName 'ModelNameEx' -NotePropertyValue '4U 24-slot 3.5-inch SAS disk enclosure' }
