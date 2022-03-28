@@ -22,7 +22,7 @@ Function Get-OceanStorInventory {
 
   $OSDisk = Get-OceanStorDisk -Oceanstor $OceanStor -Username $Username -Password $Password -Scope $Scope -Silent $true
   $OSDisk | Add-Member -NotePropertyName 'OceanStorName' -NotePropertyValue "$($OSInfo.Name)"
-  $RetVal += ($OSdisk | select OceanStorName,@{N="Name";E={$("Disk "+$_.ID)}},Location,@{N="ESN";E={$_.Barcode}},@{N='Model';E={($_.ELABEL.Split([Environment]::NewLine) | where {$_ -like 'Description*'}).Split('=')[1]}})
+  $RetVal += ($OSdisk | select OceanStorName,@{N="Name";E={"Disk "+ $($_.ID)}},Location,@{N="ESN";E={$_.Barcode}},@{N='Model';E={($_.ELABEL.Split([Environment]::NewLine) | where {$_ -like 'Description*'}).Split('=')[1]}})
   
   Return($RetVal)
 }
