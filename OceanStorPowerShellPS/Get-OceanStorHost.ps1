@@ -7,7 +7,7 @@ Function Get-OceanStorHost {
     [PARAMETER(Mandatory=$True, Position=3,HelpMessage = "Password",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][String]$Password,
     [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][int]$Scope=0,
     [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][bool]$Silent=$true,
-    [PARAMETER(Mandatory=$True,Position=6,HelpMessage = "Host name",ParameterSetName='Hostname')][String]$Name = $null,
+    [PARAMETER(Mandatory=$True,Position=6,HelpMessage = "Host name",ParameterSetName='Hostname')][String[]]$Name = $null,
     [PARAMETER(Mandatory=$True,Position=6,HelpMessage = "Host ID",ParameterSetName='ID')][int]$ID = $null
   )
   $RetVal = $null
@@ -43,9 +43,9 @@ Function Get-OceanStorHost {
       switch ( $PSCmdlet.ParameterSetName )
       {
         'Hostname' { 
-	      $RetVal = $result.data | where {$_.Name.ToUpper() -eq $Name.ToUpper()}
+	      $RetVal = $result.data | where {$Name.ToUpper() -contains $_.Name.ToUpper()}
 		  if ((-not $RetVal) -and (-not $Silent)) {
-		    write-host "ERROR (Get-OceanStorHosts): Host $($Name) not found" -foreground "Red"
+		    write-host "ERROR (Get-OceanStorHosts): Host(s) $($Name) not found" -foreground "Red"
 		  }		  
 		}
 	    default { 

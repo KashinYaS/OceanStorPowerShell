@@ -10,7 +10,7 @@ Function New-OceanStorLUN {
     [PARAMETER(Mandatory=$False,Position=5, HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='LUNName')][bool]$Silent=$true,
     [PARAMETER(Mandatory=$False,Position=6, HelpMessage = "Thin - if True then create Thin LUN. Thin LUN creation by default",ParameterSetName='LUNName')][bool]$Thin=$true,
 	[PARAMETER(Mandatory=$False,Position=7, HelpMessage = "Application Type Name",ParameterSetName='LUNName')][String]$AppTypeName='Default',
-    [PARAMETER(Mandatory=$True, Position=8, HelpMessage = "Storage Pool Name",ParameterSetName='LUNName')][String]$StoragePoolName,
+    [PARAMETER(Mandatory=$False, Position=8,HelpMessage = "Storage Pool Name",ParameterSetName='LUNName')][String]$StoragePoolName = $null,
     [PARAMETER(Mandatory=$True, Position=9, HelpMessage = "Size GB",ParameterSetName='LUNName')][int]$Size,
     [PARAMETER(Mandatory=$True, Position=10,HelpMessage = "LUN name",ParameterSetName='LUNName')][Parameter(ValueFromRemainingArguments=$true)][String[]]$Name = $null
   )
@@ -19,7 +19,12 @@ Function New-OceanStorLUN {
   Fix-OceanStorConnection
   
   # -Name for Get-OceanStorStoragePool is case insensitive
-  $StoragePool   = Get-OceanStorStoragePool -OceanStor $OceanStor -Port $Port -Username $Username -Password $Password -Scope $Scope -Silent $True -Name $StoragePoolName
+  if ($StoragePoolName) {
+    $StoragePool   = Get-OceanStorStoragePool -OceanStor $OceanStor -Port $Port -Username $Username -Password $Password -Scope $Scope -Silent $True -Name $StoragePoolName
+  }
+  else {
+	$StoragePool   = Get-OceanStorStoragePool -OceanStor $OceanStor -Port $Port -Username $Username -Password $Password -Scope $Scope -Silent $True	
+  }
 
   if ($Thin) {
     $AllocType = 1 # Thin LUN
@@ -43,7 +48,22 @@ Function New-OceanStorLUN {
   
   if ((-not $StoragePool) -or ($StoragePool.Count -gt 1)) {
     if (-not $Silent) {
-      write-host "ERROR (New-OceanStorLUN): Wrong storage pool specified (searching by name $($StoragePoolName) got $($StoragePool))" -foreground "Red"
+	  if (-not $StoragePoolName) {
+        if ($StoragePool.Count -gt 1) {
+		  write-host "ERROR (New-OceanStorLUN): No Storage Pool name specified and more than one Storage Pool exists $($StoragePool.Name -join ', ')" -foreground "Red"
+		}
+		else {
+		  write-host "ERROR (New-OceanStorLUN): No Storage Pool name specified, no Storage Pools found" -foreground "Red"
+		}
+	  }
+	  else {
+        if ($StoragePool.Count -gt 1) {
+		  write-host "ERROR (New-OceanStorLUN): Found $($StoragePool.Count) Storage Pools ($($StoragePool.Name -join ', ')) with name $($StoragePoolName). How is this possible at all???" -foreground "Red"
+		}
+		else {
+		  write-host "ERROR (New-OceanStorLUN): No Storage Pool $($StoragePoolName) found" -foreground "Red"
+		}
+	  }		
     }
   }
   elseif ($ApplicationTypeId -eq (-1)) {
@@ -51,7 +71,9 @@ Function New-OceanStorLUN {
       write-host "ERROR (New-OceanStorLUN): Wrong Application Type specified (searching by name $($AppTypeName) failed)" -foreground "Red"
     }	  
   }
-  else {  
+  else {
+    $StoragePoolName = $StoragePool.NAME    
+	
     $body = @{username = "$($Username)";password = "$($Password)";scope = $Scope}
     
     $BaseRESTURI = "https://" + $OceanStor + ":" + $Port +"/deviceManager/rest/"

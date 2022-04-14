@@ -8,7 +8,7 @@ Function Get-OceanStorStoragePool {
     [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='SPName')][int]$Scope=0,
     [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='SPName')][bool]$Silent=$true,
     [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "Storage Pool ID",ParameterSetName='ID')][int]$ID = $null,
-    [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "Storage Pool name",ParameterSetName='SPName')][String]$Name = $null
+    [PARAMETER(Mandatory=$False, Position=6,HelpMessage = "Storage Pool name",ParameterSetName='SPName')][String[]]$Name = $null
   )
   $RetVal = $null
 
@@ -44,7 +44,7 @@ Function Get-OceanStorStoragePool {
         {
           'ID' { $RetVal = $result.data | where {$_.ID -eq $ID} }
 		  'SPName' {
-	        $RetVal = $result.data | where {$_.Name.ToUpper() -eq $Name.ToUpper()}
+	        $RetVal = $result.data | where {$Name.ToUpper() -contains $_.Name.ToUpper()}
 		    if ((-not $RetVal) -and (-not $Silent)) {
 		      write-host "ERROR (Get-OceanStorLUN): LUN $($Name) not found" -foreground "Red"
 		    }			 
