@@ -66,7 +66,7 @@ Function New-OceanStorHost {
 
       if ($ActualHost) {
         if (-not $Silent) { write-host "Host $($ActualHost.Name) already exists" -foreground "Green" }
-        $HostsForGrouping += $ActualHost
+        #$HostsForGrouping += $ActualHost
       }
       else {
         $HostForJSON = @{
