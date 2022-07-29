@@ -36,6 +36,14 @@ Function Get-OceanStorInventory {
   $OSFan | Add-Member -NotePropertyName 'OceanStorName' -NotePropertyValue "$($OSInfo.Name)"
   $RetVal += $OSFan | where {$_.Name -notlike 'PSU*'} | select OceanStorName,Name,Location,@{N='ESN';E={($_.ELABEL.Split([Environment]::NewLine) | where {$_ -like 'Barcode*'}).Split('=')[1]}},@{N='Model';E={($_.ELABEL.Split([Environment]::NewLine) | where {$_ -like 'BoardType*'}).Split('=')[1]}},@{N='Description';E={($_.ELABEL.Split([Environment]::NewLine) | where {$_ -like 'Description*'}).Split('=')[1]}}
    
+  $OSExpModule = Get-OceanStorExpansionBoard -Oceanstor $OceanStor -Username $Username -Password $Password -Scope $Scope -Silent $true
+  $OSExpModule | Add-Member -NotePropertyName 'OceanStorName' -NotePropertyValue "$($OSInfo.Name)"
+  $RetVal += $OSExpModule | select OceanStorName,Name,Location,@{N='ESN';E={($_.ELABEL.Split([Environment]::NewLine) | where {$_ -like 'Barcode*'}).Split('=')[1]}},@{N='Model';E={($_.ELABEL.Split([Environment]::NewLine) | where {$_ -like 'BoardType*'}).Split('=')[1]}},@{N='Description';E={($_.ELABEL.Split([Environment]::NewLine) | where {$_ -like 'Description*'}).Split('=')[1]}}
+  
+  foreach ($CurrentVal in $RetVal) {
+    $CurrentVal.Description = ([System.Web.HttpUtility]::HtmlDecode( $CurrentVal.Description ))
+  }
+  
   Return($RetVal)
 }
 
