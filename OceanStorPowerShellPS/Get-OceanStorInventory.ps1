@@ -16,6 +16,12 @@ Function Get-OceanStorInventory {
   $OSEnclosure | Add-Member -NotePropertyName 'OceanStorName' -NotePropertyValue "$($OSInfo.Name)"
   $RetVal += ($OSEnclosure | select OceanStorName,Name,@{N="Location";E={$_.Name}},@{N="ESN";E={$_.SERIALNUM}},@{N="Model";E={$_.ModelNameEx}},@{N='Description';E={($_.ELABEL.Split([Environment]::NewLine) | where {$_ -like 'Description*'}).Split('=')[1]}})
 
+  $OSController = Get-OceanStorController -Oceanstor $OceanStor -Username $Username -Password $Password -Scope $Scope -Silent $true
+  $OSController | Add-Member -NotePropertyName 'OceanStorName' -NotePropertyValue "$($OSInfo.Name)"
+  $RetVal += $OSController | select OceanStorName,Name,Location,@{N='ESN';E={($_.ELABEL.Split([Environment]::NewLine) | where {$_ -like 'Barcode*'}).Split('=')[1]}},
+    @{N='Model';E={(($_.ELABEL.Split([Environment]::NewLine) | where {$_ -like 'Description*'}).Split('=')[1]).Split(',')[2]}},
+	@{N='Description';E={($_.ELABEL.Split([Environment]::NewLine) | where {$_ -like 'Description*'}).Split('=')[1]}}
+
   $OSIOModule = Get-OceanStorInterfaceModule -Oceanstor $OceanStor -Username $Username -Password $Password -Scope $Scope -Silent $true
   $OSIOModule | Add-Member -NotePropertyName 'OceanStorName' -NotePropertyValue "$($OSInfo.Name)"
   $RetVal += ($OSIOModule | select OceanStorName,Name,Location,@{N='ESN';E={($_.ELABEL.Split([Environment]::NewLine) | where {$_ -like 'Barcode*'}).Split('=')[1]}},@{N="Model";E={$_.ModelNameEx}},@{N='Description';E={($_.ELABEL.Split([Environment]::NewLine) | where {$_ -like 'Description*'}).Split('=')[1]}})
