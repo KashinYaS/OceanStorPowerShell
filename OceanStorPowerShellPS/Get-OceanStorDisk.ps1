@@ -1,13 +1,15 @@
 Function Get-OceanStorDisk {
   [CmdletBinding(DefaultParameterSetName="Default")]
   PARAM (
-    [PARAMETER(Mandatory=$True, Position=0,HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][String]$OceanStor,
-    [PARAMETER(Mandatory=$False,Position=1,HelpMessage = "Port",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][int]$Port=8088,	
-    [PARAMETER(Mandatory=$True, Position=2,HelpMessage = "Username",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][String]$Username,
-    [PARAMETER(Mandatory=$True, Position=3,HelpMessage = "Password",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][String]$Password,
-    [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][int]$Scope=0,
-    [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][bool]$Silent=$true,
-	[PARAMETER(Mandatory=$True, Position=6,HelpMessage = "Disk ID",ParameterSetName='ID')][int[]]$ID = $null
+    [PARAMETER(Mandatory=$True, Position=0,HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Location')][String]$OceanStor,
+    [PARAMETER(Mandatory=$False,Position=1,HelpMessage = "Port",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Location')][int]$Port=8088,	
+    [PARAMETER(Mandatory=$True, Position=2,HelpMessage = "Username",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Location')][String]$Username,
+    [PARAMETER(Mandatory=$True, Position=3,HelpMessage = "Password",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Location')][String]$Password,
+    [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Location')][int]$Scope=0,
+    [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Location')][bool]$Silent=$true,
+	[PARAMETER(Mandatory=$True, Position=6,HelpMessage = "Disk ID",ParameterSetName='ID')][int[]]$ID = $null,
+	[PARAMETER(Mandatory=$True, Position=6,HelpMessage = "Disk Location",ParameterSetName='Location')][String[]]$Location = $null
+	
   )
   $RetVal = $null
  
@@ -39,6 +41,9 @@ Function Get-OceanStorDisk {
           $URI = $RESTURI  + "disk"
 	    }
 	  }
+	  'Location' { 
+	    $URI = $RESTURI  + "disk" 
+	  }
 	  default { 
 	    $URI = $RESTURI  + "disk" 
 	  }
@@ -69,6 +74,27 @@ Function Get-OceanStorDisk {
              }
 	       }		  
 		}		  
+        'Location' {
+	       if ( $Location.Count -eq 1 ) { 
+	         $RetVal = $result.data	| where { $Location -eq $_.Location }	
+	       }
+	       else { # several objects specified - need to select some of them
+	         $RetVal = $result.data | where { $Location -contains $_.Location }		     
+			 if ($RetVal) {
+			   if ($RetVal.Count -lt $Location.Count) {
+			     if (-not $Silent) {
+				   $NotFoundEncLocations = ($Location | where {$RetVal.Location -notcontains $_}) -join ','
+		           write-host "WARNING (Get-OceanStorDisk): Disk(s) with Location(s) $($NotFoundEncLocations) not found" -foreground "Yellow"
+		         }
+			   }
+			 }
+			 else {
+		       if (-not $Silent) {
+		         write-host "ERROR (Get-OceanStorDisk): Disk(s) with Location(s) $($Location -join ',') not found" -foreground "Red"
+		       }
+             }
+	       }		  
+		}
 	    default { 
 	      $RetVal = $result.data 
 	    }
