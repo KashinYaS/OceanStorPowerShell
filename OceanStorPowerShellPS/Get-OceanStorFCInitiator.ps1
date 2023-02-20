@@ -35,23 +35,25 @@ Function Get-OceanStorFCInitiator {
 
     $Body = @{}
 	
-	if ($HostID -and ($HostID.Count -eq 1)) {
-	  $HostBodyAdd = @{'PARENTID' = "$HostID"}
-	  $Body += $HostBodyAdd
-	}
-
 	if ($PortID) {
 	  $PortBodyAdd = @{'ASSOCIATEOBJID' = "$PortID"; 'ASSOCIATEOBJTYPE' = '212'}
 	  $Body += $PortBodyAdd
+	  $URI = $RESTURI  + "fc_initiator/associate"
+	}`
+	else {
+	  $URI = $RESTURI  + "fc_initiator"
+	  if ($HostID -and ($HostID.Count -eq 1)) {
+	    $HostBodyAdd = @{'PARENTID' = "$HostID"}
+	    $Body += $HostBodyAdd
+	  }
 	}
-		
-    $URI = $RESTURI  + "fc_initiator"
+	
     $result = Invoke-RestMethod -Method Get $URI -Headers $header -ContentType "application/json" -Credential $UserCredentials -Body $Body -WebSession $WebSession
     if ($result -and ($result.error.code -eq 0)) {
       $OceanStorFCInitiators = $result.data | where {$_.TYPE -eq "223"}
 	  
-	  if ($HostID -and ($HostID.Count -gt 1)) {
-	    $OceanStorFCInitiators = $OceanStorFCInitiators | where {$HostId -contains $_.PARENTID}
+	  if ($HostID -and ($HostID.Count -ge 1)) {
+	    $OceanStorFCInitiators = $OceanStorFCInitiators | where {[array]$HostID -contains $_.PARENTID}
 	  }
 	  
     }
