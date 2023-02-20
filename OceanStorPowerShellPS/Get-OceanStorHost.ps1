@@ -8,7 +8,7 @@ Function Get-OceanStorHost {
     [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][int]$Scope=0,
     [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][bool]$Silent=$true,
     [PARAMETER(Mandatory=$True,Position=6,HelpMessage = "Host name",ParameterSetName='Hostname')][String[]]$Name = $null,
-    [PARAMETER(Mandatory=$True,Position=6,HelpMessage = "Host ID",ParameterSetName='ID')][int]$ID = $null
+    [PARAMETER(Mandatory=$True,Position=6,HelpMessage = "Host ID",ParameterSetName='ID')][int[]]$ID = $null
   )
   $RetVal = $null
  
@@ -32,7 +32,14 @@ Function Get-OceanStorHost {
 
     switch ( $PSCmdlet.ParameterSetName )
     {
-      'ID' { $URI = $RESTURI  + "host/" + $ID }
+      'ID' {
+		if ($ID.Count -eq 1) {
+		  $URI = $RESTURI  + "host/" + $ID
+		}`
+		else {
+		  $URI = $RESTURI  + "host"
+		}
+      }
 	  default { 
 	    $URI = $RESTURI  + "host"
 	  }
@@ -47,6 +54,17 @@ Function Get-OceanStorHost {
 		  if ((-not $RetVal) -and (-not $Silent)) {
 		    write-host "ERROR (Get-OceanStorHosts): Host(s) $($Name) not found" -foreground "Red"
 		  }		  
+		}
+		'ID' {
+		  if ($ID.Count -eq 1) {
+			$RetVal = $result.data
+		  }`
+          else {
+			$RetVal = $result.data | where {$ID -contains $_.ID}
+		    if ((-not $RetVal) -and (-not $Silent)) {
+		      write-host "ERROR (Get-OceanStorHosts): Host(s) with ID(s) $($ID) not found" -foreground "Red"
+		    }					
+		  }			  
 		}
 	    default { 
 	      $RetVal = $result.data	
