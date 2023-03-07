@@ -9,7 +9,8 @@ Function Get-OceanStorLUN {
     [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LUNName')][bool]$Silent=$true,
     [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "LUN name",ParameterSetName='LUNName')][String[]]$Name = $null,
     [PARAMETER(Mandatory=$True, Position=6,HelpMessage = "LUN ID",ParameterSetName='ID')][int[]]$ID = $null,
-	[PARAMETER(Mandatory=$False,Position=7,HelpMessage = "CanDelete - return only LUN(s) that can be deleted",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LUNName')][switch]$CanDelete
+	[PARAMETER(Mandatory=$False,Position=7,HelpMessage = "CanDelete - return only LUN(s) that can be deleted",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LUNName')][switch]$CanDelete,
+	[PARAMETER(Mandatory=$False,Position=8,HelpMessage = "AddCustomProps - add custom properties (CapacityGB etc.)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LUNName')][switch]$AddCustomProps	
   )
   $RetVal = $null
  
@@ -106,6 +107,11 @@ Function Get-OceanStorLUN {
   
   $URI = $RESTURI  + "sessions"
   $SessionCloseResult = Invoke-RestMethod -Method Delete $URI -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
+  
+  if ($Retval -and $AddCustomProps) {
+	$RetVal = $Retval | Select *,@{N='CapacityGB';E={[math]::round([float]$_.CAPACITY * $_.SECTORSIZE / 1073741824,    3)}}
+	$RetVal = $Retval | Select *,@{N='CapacityTB';E={[math]::round([float]$_.CAPACITY * $_.SECTORSIZE / 1099511627776, 3)}}
+  }
   
   Return($RetVal)
 }
