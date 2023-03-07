@@ -111,6 +111,29 @@ Function Get-OceanStorLUN {
   if ($Retval -and $AddCustomProps) {
 	$RetVal = $Retval | Select *,@{N='CapacityGB';E={[math]::round([float]$_.CAPACITY * $_.SECTORSIZE / 1073741824,    3)}}
 	$RetVal = $Retval | Select *,@{N='CapacityTB';E={[math]::round([float]$_.CAPACITY * $_.SECTORSIZE / 1099511627776, 3)}}
+	$RetVal | Add-Member -MemberType NoteProperty -Name HealthStatusHR -Value $null
+	$RetVal | Add-Member -MemberType NoteProperty -Name RunningStatusHR -Value $null	
+	foreach ($CurrentVal in $RetVal) {
+	  switch ( $CurrentVal.HealthStatus )
+      {
+        '1'  { $CurrentVal.HealthStatusHR = 'Normal' }
+        '2'  { $CurrentVal.HealthStatusHR = 'Faulty' }
+	    '15' { $CurrentVal.HealthStatusHR = 'Write protected' }
+	    default { 
+	      $CurrentVal.HealthStatusHR = $CurrentVal.HealthStatus 
+	    }
+      }
+	  switch ( $CurrentVal.RunningStatus )
+      {
+        '27'  { $CurrentVal.RunningStatusHR = 'Online' }
+        '28'  { $CurrentVal.RunningStatusHR = 'Offline' }
+	    '53'  { $CurrentVal.RunningStatusHR = 'Initializing' }
+	    '106' { $CurrentVal.RunningStatusHR = 'Deleting' }
+	    default { 
+	      $CurrentVal.RunningStatusHR = $CurrentVal.RunningStatus 
+	    }
+      }
+	}
   }
   
   Return($RetVal)
