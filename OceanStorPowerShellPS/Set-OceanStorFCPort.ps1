@@ -48,14 +48,14 @@ Function Set-OceanStorFCPort {
 	  
     $BasePortURI = $RESTURI  + "fc_port"
 	foreach ($CurrentPortId in $ID) {
-	  $PortName = ($OceanStorFCPorts | where {$_.ID -eq $CurrentPortId}).Name
+	  $PortLocation = ($OceanStorFCPorts | where {$_.ID -eq $CurrentPortId}).LOCATION
 
-	  if (-not $PortName) {
+	  if (-not $PortLocation) {
 		if (-not $Silent) { write-host "ERROR (Set-OceanStorHost): FC Port with ID $($CurrentPortId) not found!" -foreground "Red" }  
 	  }`
 	  else {
         if ($WhatIf) {
-		  write-host "WhatIf (Set-OceanStorHost): Setting Port $($PortName)/$($CurrentPortId) state to $($DesiredPortState)" -foreground "Yellow" 
+		  write-host "WhatIf (Set-OceanStorHost): Setting Port $($PortLocation)/$($CurrentPortId) state to $($DesiredPortState)" -foreground "Yellow" 
 	    }
 	   else {
 		   
@@ -63,11 +63,11 @@ Function Set-OceanStorFCPort {
 		  
           $result = Invoke-RestMethod -Method "PUT" -Uri $URI -Body ($PortJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
           if ($result -and ($result.error.code -eq 0)) {
-            if (-not $Silent) { write-host "INFO (Set-OceanStorHost): Succesfully $($DesiredPortState) Port $($PortName)/$($CurrentPortId)" -foreground "Green" }
+            if (-not $Silent) { write-host "INFO (Set-OceanStorHost): Succesfully $($DesiredPortState) Port $($PortLocation)/$($CurrentPortId)" -foreground "Green" }
              $RetVal += $result.data        
             }`
             else {
-              if (-not $Silent) { write-host "ERROR (New-OceanStorHost): Failed to Modify Port $($PortName)/$($CurrentPortId) [set state to $($DesiredPortState)]: $($result.error.description)" -foreground "Red" }
+              if (-not $Silent) { write-host "ERROR (New-OceanStorHost): Failed to Modify Port $($PortLocation)/$($CurrentPortId) [set state to $($DesiredPortState)]: $($result.error.description)" -foreground "Red" }
             }
 	    }
 	  }	  
