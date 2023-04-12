@@ -111,8 +111,11 @@ Function Get-OceanStorLUN {
   if ($Retval -and $AddCustomProps) {
 	$RetVal = $Retval | Select *,@{N='CapacityGB';E={[math]::round([float]$_.CAPACITY * $_.SECTORSIZE / 1073741824,    3)}}
 	$RetVal = $Retval | Select *,@{N='CapacityTB';E={[math]::round([float]$_.CAPACITY * $_.SECTORSIZE / 1099511627776, 3)}}
+	$RetVal = $Retval | Select *,@{N='AllocCapacityGB';E={[math]::round([float]$_.ALLOCCAPACITY * $_.SECTORSIZE / 1073741824,    3)}}
+	$RetVal = $Retval | Select *,@{N='AllocCapacityTB';E={[math]::round([float]$_.ALLOCCAPACITY * $_.SECTORSIZE / 1099511627776, 3)}}	
 	$RetVal | Add-Member -MemberType NoteProperty -Name HealthStatusHR -Value $null
 	$RetVal | Add-Member -MemberType NoteProperty -Name RunningStatusHR -Value $null	
+	$RetVal | Add-Member -MemberType NoteProperty -Name AllocTypeHR -Value $null	
 	foreach ($CurrentVal in $RetVal) {
 	  switch ( $CurrentVal.HealthStatus )
       {
@@ -133,6 +136,15 @@ Function Get-OceanStorLUN {
 	      $CurrentVal.RunningStatusHR = $CurrentVal.RunningStatus 
 	    }
       }
+	  switch ( $CurrentVal.AllocType )
+      {
+        '0'  { $CurrentVal.AllocTypeHR = 'Thick' }
+        '1'  { $CurrentVal.AllocTypeHR = 'Thin' }
+	    default { 
+	      $CurrentVal.AllocTypeHR = $CurrentVal.AllocType 
+	    }
+      }
+	  
 	}
   }
   
