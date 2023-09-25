@@ -1,4 +1,4 @@
-Function Get-OceanStorHostStatisticstatistics {
+Function Get-OceanStorHostStatistics {
   [CmdletBinding(DefaultParameterSetName="Default")]
   PARAM (
     [PARAMETER(Mandatory=$True, Position=0,HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][String]$OceanStor,
