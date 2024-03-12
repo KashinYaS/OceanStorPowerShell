@@ -41,7 +41,7 @@ Function New-OceanStorApplicationType {
           write-host "INFO (New-OceanStorApplicationType): Creating Application Type $($Name)" -foreground "Green"
   	    }
         
-		if ($Compression)   { $EnableCompress = 'true' } else { EnableCompress = 'false' }
+		if ($Compression)   { $EnableCompress = 'true' } else { $EnableCompress = 'false' }
 		if ($Deduplication) { $EnableDedup = 'true' }    else { $EnableDedup = 'false' }
 		
   	    $AppTypeForJSON = @{
