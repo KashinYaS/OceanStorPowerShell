@@ -68,7 +68,7 @@ Function New-OceanStorApplicationType {
   	    }
       
 	  $URI = $RESTURI  + "sessions"
-      $SessionCloseResult = Invoke-RestMethod -Method Delete $URI -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
+      $SessionCloseResult = Invoke-RestMethod -Method Delete $URI -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession -ErrorAction SilentlyContinue
     
     } # if ($logonsession -and ($logonsession.error.code -eq 0)) {
 
