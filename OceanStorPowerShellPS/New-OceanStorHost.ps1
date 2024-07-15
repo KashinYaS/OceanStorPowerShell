@@ -18,7 +18,7 @@ Function New-OceanStorHost {
   $SPECIALMODETYPE = 2
   # "multipath_type=third-party failover_mode=special_mode special_mode_type=mode2"    		  
  
-  $OPERATIONSYSTEM = 7 #VMware ESXi
+  $DefaultOPERATIONSYSTEM = 7 #VMware ESXi
 
   Fix-OceanStorConnection
 
@@ -26,7 +26,6 @@ Function New-OceanStorHost {
 
   $BaseRESTURI = "https://" + $OceanStor + ":" + $Port + "/deviceManager/rest/"
   $SessionURI = $BaseRESTURI  + "xxxxx/sessions"
-
 
   # --- OceanStor modification section, one big session, cause no pauses in modification procedure intended ---
   $logonsession = Invoke-RestMethod -Method "Post" -Uri $SessionURI -Body (ConvertTo-Json $body) -SessionVariable WebSession
@@ -69,12 +68,29 @@ Function New-OceanStorHost {
         #$HostsForGrouping += $ActualHost
       }
       else {
+		  
+        $OPERATIONSYSTEM = $DefaultOPERATIONSYSTEM
+		if ($StorageHost.OperationSystem) {
+          $OPERATIONSYSTEM = $DefaultOPERATIONSYSTEM
+          switch ($($StorageHost.OperationSystem)) {
+            'Windows' 	{ $OPERATIONSYSTEM = 1 }
+            '1' 		{ $OPERATIONSYSTEM = 1 }
+            'ESX'	{ $OPERATIONSYSTEM = 7 }
+			'ESXi'	{ $OPERATIONSYSTEM = 7 }
+			'7'		{ $OPERATIONSYSTEM = 7 }
+			'XEN'		{ $OPERATIONSYSTEM = 5 }
+			'XenServer'	{ $OPERATIONSYSTEM = 5 }
+			'5'			{ $OPERATIONSYSTEM = 5 }
+          }
+		}
+
         $HostForJSON = @{
           NAME = $HostName
           OPERATIONSYSTEM = $OPERATIONSYSTEM
         }
+		
 		if ($WhatIf) {
-		   write-host "WhatIf (New-OceanStorHost): Add host $($HostName)" -foreground "Green" 
+		   write-host "WhatIf (New-OceanStorHost): Add host $($HostName) with OS ID $($OPERATIONSYSTEM)" -foreground "Green" 
 		}
 		else {
           $result = Invoke-RestMethod -Method "Post" -Uri $URI -Body (ConvertTo-Json $HostForJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
@@ -89,7 +105,7 @@ Function New-OceanStorHost {
       }
     
 	  if ($ActualHost) {
-		$PWWN = $StorageHost.FirstpWWN
+		$PWWN = $StorageHost.FirstpWWN -replace ':',''
         if ($PWWN) {
           $InitiatorURI = $RESTURI  +  "fc_initiator/" + $PWWN.ToLower()
           $InitiatorModificationForJSON = @{
@@ -114,7 +130,7 @@ Function New-OceanStorHost {
 		  } # if ($WhatIf) ... else  
         }
 
-        $PWWN = $StorageHost.SecondpWWN
+        $PWWN = $StorageHost.SecondpWWN -replace ':',''
         if ($PWWN) {
           $InitiatorURI = $RESTURI  +  "fc_initiator/" + $PWWN.ToLower()
           $InitiatorModificationForJSON = @{
