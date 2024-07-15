@@ -8,6 +8,7 @@ Function New-OceanStorHost {
     [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='default')][int]$Scope=0,
     [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "WhatIf - if mentioned then do nothing, only print message",ParameterSetName='default')][switch]$WhatIf,	
     [PARAMETER(Mandatory=$False,Position=6,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='default')][bool]$Silent=$true,
+    [PARAMETER(Mandatory=$False,Position=6,HelpMessage = "AddInitiator - Automatically add initiators if they does not exist",ParameterSetName='default')][bool]$AddInitiator=$false,	
     [PARAMETER(Mandatory=$True, Position=7,HelpMessage = "Host(s) (object with Name, FirstpWWN and SecondpWWN parameters)",ParameterSetName='default')][Parameter(ValueFromRemainingArguments=$true)][Object[]]$StorageHosts = $null
   )
   $RetVal = $null
@@ -21,6 +22,8 @@ Function New-OceanStorHost {
   $DefaultOPERATIONSYSTEM = 7 #VMware ESXi
 
   Fix-OceanStorConnection
+
+  $FCInitiatorIDs = (Get-OceanStorfcinitiator -OceanStor "$OceanStor" -Username "$Username" -Password "$Password" -Scope $Scope -Port $Port -Silent $true).ID
 
   $body = @{username = "$($Username)";password = "$($Password)";scope = $Scope}
 
@@ -41,7 +44,7 @@ Function New-OceanStorHost {
   
     # --- host adding
     if (-not $Silent) {
-	  Write-Progress  -Activity "Adding ESXi hosts as a Hosts" -CurrentOperation "Getting existing hosts" -PercentComplete 10
+	  Write-Progress  -Activity "Adding Hosts" -CurrentOperation "Getting existing hosts" -PercentComplete 10
 	}
     $URI = $RESTURI  + "host"
     $result = Invoke-RestMethod -Method "Get" $URI -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
@@ -59,12 +62,12 @@ Function New-OceanStorHost {
       $HostName = $StorageHost.Name
       $PercentCompletedHosts = [math]::Floor($ProcessedHosts / $StorageHosts.Count * 90) + 10
       if (-not $Silent) {
-	    Write-Progress  -Activity "Adding ESXi hosts as a Hosts" -CurrentOperation "Processing $($HostName)" -PercentComplete $PercentCompletedHosts 
+	    Write-Progress  -Activity "Adding Hosts" -CurrentOperation "Processing $($HostName)" -PercentComplete $PercentCompletedHosts 
 	  }
       $ActualHost = $OceanStorHosts | where {$_.Name.ToUpper() -eq $HostName.ToUpper()}
 
       if ($ActualHost) {
-        if (-not $Silent) { write-host "Host $($ActualHost.Name) already exists" -foreground "Green" }
+        if (-not $Silent) { write-host "INFO (New-OceanStorHost): Host $($ActualHost.Name) already exists" -foreground "Green" }
         #$HostsForGrouping += $ActualHost
       }
       else {
@@ -95,7 +98,7 @@ Function New-OceanStorHost {
 		else {
           $result = Invoke-RestMethod -Method "Post" -Uri $URI -Body (ConvertTo-Json $HostForJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
           if ($result -and ($result.error.code -eq 0)) {
-            if (-not $Silent) { write-host "Host $($ActualHost.Name) added" -foreground "Green" }
+            if (-not $Silent) { write-host "INFO (New-OceanStorHost): Host $($ActualHost.Name) added" -foreground "Green" }
             $ActualHost = $result.data        
           }
           else {
@@ -119,10 +122,23 @@ Function New-OceanStorHost {
           if ($WhatIf) {
 		    write-host "WhatIf (New-OceanStorHost): Associate $PWWN with host $($HostName)" -foreground "Green"
           }
-          else {		  
+          else {
+            
+			if ( ($FCInitiatorIDs -notcontains $PWWN) -and  $AddInitiator) {
+			  if (-not $Silent) { write-host "INFO (New-OceanStorHost):    Initiator $($pWWN) not found - trying to add automatically" -foreground "Green"    }
+			  $AddPwwnResult = New-OceanStorFCinitiator -OceanStor "$OceanStor" -Username "$Username" -Password "$Password" -Scope $Scope -Port $Port -Silent $true -pWWN "$PWWN"
+			  if ($AddPwwnResult -and $AddPwwnResult.ID) {
+			    $FCInitiatorIDs += $AddPwwnResult.ID
+				if (-not $Silent) { write-host "INFO (New-OceanStorHost):    Initiator $($pWWN) succesfully added" -foreground "Green"    }
+			  }`
+			  else {
+			    if (-not $Silent) { write-host "WARNING (New-OceanStorHost): Initiator $($pWWN) auto-add failed" -foreground "Yellow"    }
+			  }
+			}
+			
             $result = Invoke-RestMethod -Method "Put" $InitiatorURI -Body (ConvertTo-Json $InitiatorModificationForJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
             if ($result -and ($result.error.code -eq 0)) {
-              if (-not $Silent) { write-host "Succesfully associated initiator $($pWWN) with host $($HostName)" -foreground "Green"    }      
+              if (-not $Silent) { write-host "INFO (New-OceanStorHost): Succesfully associated initiator $($pWWN) with host $($HostName)" -foreground "Green"    }      
             }
             else {
               if (-not $Silent) { write-host "ERROR (New-OceanStorHost): Failed to associate initiator $($pWWN) with host $($HostName): $($result.error.description)" -foreground "Red" }
@@ -145,9 +161,22 @@ Function New-OceanStorHost {
 		    write-host "WhatIf (New-OceanStorHost): Associate $PWWN with host $($HostName)" -foreground "Green"
           }
           else {		  
+
+			if ( ($FCInitiatorIDs -notcontains $PWWN) -and  $AddInitiator) {
+			  if (-not $Silent) { write-host "INFO (New-OceanStorHost):    Initiator $($pWWN) not found - trying to add automatically" -foreground "Green"    }
+			  $AddPwwnResult = New-OceanStorFCinitiator -OceanStor "$OceanStor" -Username "$Username" -Password "$Password" -Scope $Scope -Port $Port -Silent $true -pWWN "$PWWN"
+			  if ($AddPwwnResult -and $AddPwwnResult.ID) {
+			    $FCInitiatorIDs += $AddPwwnResult.ID
+				if (-not $Silent) { write-host "INFO (New-OceanStorHost):    Initiator $($pWWN) succesfully added" -foreground "Green"    }
+			  }`
+			  else {
+			    if (-not $Silent) { write-host "WARNING (New-OceanStorHost): Initiator $($pWWN) auto-add failed" -foreground "Yellow"    }
+			  }
+			}
+
             $result = Invoke-RestMethod -Method "Put" $InitiatorURI -Body (ConvertTo-Json $InitiatorModificationForJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
             if ($result -and ($result.error.code -eq 0)) {
-              if (-not $Silent) { write-host "Succesfully associated initiator $($pWWN) with host $($HostName)" -foreground "Green"    }      
+              if (-not $Silent) { write-host "INFO (New-OceanStorHost): Succesfully associated initiator $($pWWN) with host $($HostName)" -foreground "Green"    }      
             }
             else {
               if (-not $Silent) { write-host "ERROR (New-OceanStorHost): Failed to associate initiator $($pWWN) with host $($HostName): $($result.error.description)" -foreground "Red" }
