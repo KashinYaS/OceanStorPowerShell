@@ -98,7 +98,7 @@ Function New-OceanStorHost {
 		else {
           $result = Invoke-RestMethod -Method "Post" -Uri $URI -Body (ConvertTo-Json $HostForJSON) -Headers $header -ContentType "application/json" -Credential $UserCredentials -WebSession $WebSession
           if ($result -and ($result.error.code -eq 0)) {
-            if (-not $Silent) { write-host "INFO (New-OceanStorHost): Host $($ActualHost.Name) added" -foreground "Green" }
+            if (-not $Silent) { write-host "INFO (New-OceanStorHost): Host $($HostName) added" -foreground "Green" }
             $ActualHost = $result.data        
           }
           else {
