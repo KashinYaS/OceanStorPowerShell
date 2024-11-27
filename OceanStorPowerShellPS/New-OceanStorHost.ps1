@@ -84,6 +84,8 @@ Function New-OceanStorHost {
             'XEN'       { $OPERATIONSYSTEM = 5 }
             'XenServer' { $OPERATIONSYSTEM = 5 }
             '5'         { $OPERATIONSYSTEM = 5 }
+            'Linux'     { $OPERATIONSYSTEM = 0 }
+			'0'         { $OPERATIONSYSTEM = 0 }
           }
         }
 
