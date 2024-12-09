@@ -71,12 +71,16 @@ Function Get-OceanStorReplicationPair {
 	    }
       }
 	  
-	  if ($AddCustomProps) {
+	  if ($AddCustomProps -and $RetVal) {
 	    $LUNs = Get-OceanStorLUN -OceanStor "$OceanStor" -Port "$Port" -Username "$Username" -Password "$Password" -Scope $Scope -AddCustomProps -Silent $true
+		
+		Add-Type -AssemblyName System.Web
 		
 		foreach ($RP in $RetVal) {
           $LUN = $LUNs | where {$_.ID -eq $RP.LOCALRESID}
           $RP | Add-Member -NotePropertyName 'LOCALRESWWN' -NotePropertyValue "$($LUN.WWN)"
+		  $LUNDescription = [System.Web.HttpUtility]::HtmlDecode($LUN.Description)
+		  $RP | Add-Member -NotePropertyName 'LOCALRESDESCRIPTION' -NotePropertyValue "$($LUNDescription)"
 		}
 		
 	  }
