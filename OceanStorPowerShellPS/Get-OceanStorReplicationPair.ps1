@@ -7,8 +7,9 @@ Function Get-OceanStorReplicationPair {
     [PARAMETER(Mandatory=$True,  Position=3,HelpMessage = "Password",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LunID')][String]$Password,
     [PARAMETER(Mandatory=$False, Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LunID')][int]$Scope=0,
     [PARAMETER(Mandatory=$False, Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LunID')][bool]$Silent=$true,
-    [PARAMETER(Mandatory=$False, Position=6,HelpMessage = "ReplicationPair ID",ParameterSetName='ID')][Parameter(ValueFromRemainingArguments=$true)][String[]]$ID = $null,
-	[PARAMETER(Mandatory=$False, Position=6,HelpMessage = "Replicated LUN ID",ParameterSetName='LunID')][Parameter(ValueFromRemainingArguments=$true)][String[]]$LunID = $null
+	[PARAMETER(Mandatory=$False, Position=6,HelpMessage = "AddCustomProps - add custom properties (LUN WWN etc.)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='LunID')][switch]$AddCustomProps,
+    [PARAMETER(Mandatory=$False, Position=7,HelpMessage = "ReplicationPair ID",ParameterSetName='ID')][Parameter(ValueFromRemainingArguments=$true)][String[]]$ID = $null,
+	[PARAMETER(Mandatory=$False, Position=7,HelpMessage = "Replicated LUN ID",ParameterSetName='LunID')][Parameter(ValueFromRemainingArguments=$true)][String[]]$LunID = $null
   )
   $RetVal = $null
  
@@ -69,6 +70,16 @@ Function Get-OceanStorReplicationPair {
 	      $RetVal = $result.data 
 	    }
       }
+	  
+	  if ($AddCustomProps) {
+	    $LUNs = Get-OceanStorLUN -OceanStor "$OceanStor" -Port "$Port" -Username "$Username" -Password "$Password" -Scope $Scope -AddCustomProps -Silent $true
+		
+		foreach ($RP in $RetVal) {
+          $LUN = $LUNs | where {$_.ID -eq $RP.LOCALRESID}
+          $RP | Add-Member -NotePropertyName 'LOCALRESWWN' -NotePropertyValue "$($LUN.WWN)"
+		}
+		
+	  }
 				
     }
     else {
