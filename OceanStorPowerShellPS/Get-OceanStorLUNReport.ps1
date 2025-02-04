@@ -49,6 +49,8 @@ Function Get-OceanStorLUNReport {
   # end stackoverflow copy-paste
   
   $RetVal = @()
+
+  Fix-OceanStorConnection
   
   $LUNs = Get-OceanStorLUN -OceanStor "$OceanStor" -Port "$Port" -Username "$Username" -Password "$Password" -Scope $Scope -AddCustomProps -Silent $true | where {[int]$_.ID -ge $StartLunID} | sort [int]ID
   if (-not $LUNs) {
