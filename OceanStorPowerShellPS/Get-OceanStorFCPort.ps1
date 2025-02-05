@@ -6,9 +6,10 @@ Function Get-OceanStorFCPort {
     [PARAMETER(Mandatory=$True, Position=2,HelpMessage = "Username",ParameterSetName='default')][PARAMETER(ParameterSetName='ID')][String]$Username,
     [PARAMETER(Mandatory=$True, Position=3,HelpMessage = "Password",ParameterSetName='default')][PARAMETER(ParameterSetName='ID')][String]$Password,
     [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='default')][PARAMETER(ParameterSetName='ID')][int]$Scope=0,
-    [PARAMETER(Mandatory=$False,Position=8,HelpMessage = "WhatIf - if mentioned then do nothing, only print message",ParameterSetName='default')][PARAMETER(ParameterSetName='ID')][switch]$WhatIf,	
-    [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='default')][PARAMETER(ParameterSetName='ID')][bool]$Silent=$true,
-	[PARAMETER(Mandatory=$True, Position=6,HelpMessage = "Port ID",ParameterSetName='ID')][string[]]$ID = $null
+    [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "WhatIf - if mentioned then do nothing, only print message",ParameterSetName='default')][PARAMETER(ParameterSetName='ID')][switch]$WhatIf,	
+    [PARAMETER(Mandatory=$False,Position=6,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='default')][PARAMETER(ParameterSetName='ID')][bool]$Silent=$true,
+    [PARAMETER(Mandatory=$False,Position=7,HelpMessage = "AddCustomProps - add custom properties (CapacityGB etc.)",ParameterSetName='default')][PARAMETER(ParameterSetName='ID')][switch]$AddCustomProps,	
+	[PARAMETER(Mandatory=$True, Position=8,HelpMessage = "Port ID",ParameterSetName='ID')][string[]]$ID = $null
   )
   $RetVal = @()
   
@@ -55,6 +56,14 @@ Function Get-OceanStorFCPort {
 	  }
     }
 
+  if ($AddCustomProps) {
+	  $DeviceInfo = Get-OceanStorDeviceInfo -OceanStor "$OceanStor" -Username "$Username" -Password "$Password" -Port "$Port" -Scope "$Scope" -Silent $True
+	  $DeviceName = "$($DeviceInfo.Name)"
+	  foreach ($Val in $RetVal) {
+	    $Val | Add-Member -NotePropertyName "DeviceName" -NotePropertyValue "$($DeviceName)"
+	  }
+  }
+  
   Return($RetVal)   
 }
 
