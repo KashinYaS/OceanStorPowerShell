@@ -78,9 +78,9 @@ Function New-OceanStorHost {
           switch ($($StorageHost.OperationSystem)) {
             'Windows'   { $OPERATIONSYSTEM = 1 }
             '1'         { $OPERATIONSYSTEM = 1 }
-            'ESX'   { $OPERATIONSYSTEM = 7 }
-            'ESXi'  { $OPERATIONSYSTEM = 7 }
-            '7'     { $OPERATIONSYSTEM = 7 }
+            'ESX'       { $OPERATIONSYSTEM = 7 }
+            'ESXi'      { $OPERATIONSYSTEM = 7 }
+            '7'         { $OPERATIONSYSTEM = 7 }
             'XEN'       { $OPERATIONSYSTEM = 5 }
             'XenServer' { $OPERATIONSYSTEM = 5 }
             '5'         { $OPERATIONSYSTEM = 5 }

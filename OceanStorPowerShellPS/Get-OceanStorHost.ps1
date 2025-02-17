@@ -7,8 +7,9 @@ Function Get-OceanStorHost {
     [PARAMETER(Mandatory=$True, Position=3,HelpMessage = "Password",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][String]$Password,
     [PARAMETER(Mandatory=$False,Position=4,HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][int]$Scope=0,
     [PARAMETER(Mandatory=$False,Position=5,HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][bool]$Silent=$true,
-    [PARAMETER(Mandatory=$True,Position=6,HelpMessage = "Host name",ParameterSetName='Hostname')][String[]]$Name = $null,
-    [PARAMETER(Mandatory=$True,Position=6,HelpMessage = "Host ID",ParameterSetName='ID')][int[]]$ID = $null
+	[PARAMETER(Mandatory=$False,Position=6,HelpMessage = "AddCustomProps - add custom properties (WWNs etc.)",ParameterSetName='Default')][PARAMETER(ParameterSetName='ID')][PARAMETER(ParameterSetName='Hostname')][switch]$AddCustomProps,	    
+	[PARAMETER(Mandatory=$True,Position=7,HelpMessage = "Host name",ParameterSetName='Hostname')][String[]]$Name = $null,
+    [PARAMETER(Mandatory=$True,Position=7,HelpMessage = "Host ID",ParameterSetName='ID')][int[]]$ID = $null
   )
   $RetVal = $null
  
@@ -70,6 +71,28 @@ Function Get-OceanStorHost {
 	      $RetVal = $result.data	
 	    }
       }
+	  
+	  if ($AddCustomProps) {
+		$CustomRetVal = @()
+	    $FCInitiators =  Get-OceanStorFCInitiator -OceanStor "$OceanStor" -Username "$Username" -Password "$Password" -Scope $Scope -Port "$Port" -Silent $true
+		if ($FCInitiators) {
+		  foreach ($OceanStorHost in $RetVal) {
+            $HostFCInitiators = $FCInitiators | where {$_.ParentID -eq $OceanStorHost.ID}
+			if ($HostFCInitiators) {
+		      $SortedIDs = ($HostFCInitiators | Sort ID).ID
+			  if ($SortedIDs[0]) {
+			    $OceanStorHost | Add-Member -Name "FirstpWWN" -MemberType Noteproperty -Value "$($SortedIDs[0])"
+			  }
+			  if ($SortedIDs[1]) {
+			    $OceanStorHost | Add-Member -Name "SecondpWWN" -MemberType Noteproperty -Value "$($SortedIDs[1])"
+			  }
+		    }
+            $CustomRetVal += $OceanStorHost 
+		  }
+	      $RetVal = $CustomRetVal
+		}
+	  }
+	  
     }
     else {
       $RetVal = $null
