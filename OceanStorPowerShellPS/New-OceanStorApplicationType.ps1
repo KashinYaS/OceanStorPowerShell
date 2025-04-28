@@ -36,13 +36,24 @@ Function New-OceanStorApplicationType {
   	  $URI = $RESTURI  + "workload_type"
   
       $RetVal = $null 
+
+      if ($Compression)   { $EnableCompress = 'true' } else { $EnableCompress = 'false' }
+      if ($Deduplication) { $EnableDedup = 'true' }    else { $EnableDedup = 'false' }
+
+      $HumanReadableBlockSize = switch ($RequestSize) {
+        0 { '4 KB'    }
+        1 { '8 KB'    }
+        2 { '16 KB'   }
+        3 { '32 KB'   }
+        4 { '64 KB'   }
+        5 { '> 64 KB' }
+      } 
+
   
         if (-not $Silent) {
-          write-host "INFO (New-OceanStorApplicationType): Creating Application Type $($Name)" -foreground "Green"
+          write-host "INFO (New-OceanStorApplicationType): Creating Application Type $($Name) with Request/Block Size = $($HumanReadableBlockSize), Compression = $($EnableCompress), Deduplication = $($EnableDedup)" -foreground "Green"
   	    }
         
-		if ($Compression)   { $EnableCompress = 'true' } else { $EnableCompress = 'false' }
-		if ($Deduplication) { $EnableDedup = 'true' }    else { $EnableDedup = 'false' }
 		
   	    $AppTypeForJSON = @{
           NAME = $Name
@@ -64,7 +75,7 @@ Function New-OceanStorApplicationType {
           }
   	    }
   	    else {
-  	        write-host "WhatIf (New-OceanStorApplicationType): Create Application Type $($Name) " -foreground "Green"  
+  	        write-host "WhatIf (New-OceanStorApplicationType): Create Application Type $($Name) with Request/Block Size = $($HumanReadableBlockSize), Compression = $($EnableCompress), Deduplication = $($EnableDedup)" -foreground "Green"  
   	    }
       
 	  $URI = $RESTURI  + "sessions"
