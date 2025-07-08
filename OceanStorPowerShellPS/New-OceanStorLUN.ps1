@@ -1,18 +1,18 @@
 Function New-OceanStorLUN {
   [CmdletBinding(DefaultParameterSetName="LUNName")]
   PARAM (
-    [PARAMETER(Mandatory=$true, Position=0, HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='LUNName')][String]$OceanStor,
-    [PARAMETER(Mandatory=$False,Position=1, HelpMessage = "Port",ParameterSetName='LUNName')][int]$Port=8088,	
-    [PARAMETER(Mandatory=$true, Position=2, HelpMessage = "Username",ParameterSetName='LUNName')][String]$Username,
-    [PARAMETER(Mandatory=$true, Position=3, HelpMessage = "Password",ParameterSetName='LUNName')][String]$Password,
-    [PARAMETER(Mandatory=$False,Position=4, HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='LUNName')][int]$Scope=0,
-    [PARAMETER(Mandatory=$False,Position=8, HelpMessage = "WhatIf - if mentioned then do nothing, only print message",ParameterSetName='LUNName')][switch]$WhatIf,	
-    [PARAMETER(Mandatory=$False,Position=5, HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='LUNName')][bool]$Silent=$true,
-    [PARAMETER(Mandatory=$False,Position=6, HelpMessage = "Thin - if True then create Thin LUN. Thin LUN creation by default",ParameterSetName='LUNName')][bool]$Thin=$true,
-    [PARAMETER(Mandatory=$False,Position=7, HelpMessage = "Application Type Name",ParameterSetName='LUNName')][String]$AppTypeName='Default',
-    [PARAMETER(Mandatory=$False, Position=9,HelpMessage = "Storage Pool Name",ParameterSetName='LUNName')][String]$StoragePoolName = $null,
+    [PARAMETER(Mandatory=$true,  Position=0, HelpMessage = "OceanStor's FQDN or IP address",ParameterSetName='LUNName')][String]$OceanStor,
+    [PARAMETER(Mandatory=$false, Position=1, HelpMessage = "Port",ParameterSetName='LUNName')][int]$Port=8088,	
+    [PARAMETER(Mandatory=$true,  Position=2, HelpMessage = "Username",ParameterSetName='LUNName')][String]$Username,
+    [PARAMETER(Mandatory=$true,  Position=3, HelpMessage = "Password",ParameterSetName='LUNName')][String]$Password,
+    [PARAMETER(Mandatory=$false, Position=4, HelpMessage = "Scope (0 - internal users, 1 - LDAP users)",ParameterSetName='LUNName')][int]$Scope=0,
+    [PARAMETER(Mandatory=$false, Position=5, HelpMessage = "Silent - if set then function will not show error messages",ParameterSetName='LUNName')][bool]$Silent=$true,
+    [PARAMETER(Mandatory=$false, Position=6, HelpMessage = "Thin - if True then create Thin LUN. Thin LUN creation by default",ParameterSetName='LUNName')][bool]$Thin=$true,
+    [PARAMETER(Mandatory=$false, Position=7, HelpMessage = "Application Type Name",ParameterSetName='LUNName')][String]$AppTypeName='Default',
+    [PARAMETER(Mandatory=$false, Position=8, HelpMessage = "WhatIf - if mentioned then do nothing, only print message",ParameterSetName='LUNName')][switch]$WhatIf,	
+    [PARAMETER(Mandatory=$false, Position=9, HelpMessage = "Storage Pool Name",ParameterSetName='LUNName')][String]$StoragePoolName = $null,
     [PARAMETER(Mandatory=$true, Position=10, HelpMessage = "Size GB",ParameterSetName='LUNName')][int]$Size,
-    [PARAMETER(Mandatory=$true, Position=11,HelpMessage = "LUN name",ParameterSetName='LUNName')][Parameter(ValueFromRemainingArguments=$true)][String[]]$Name = $null
+    [PARAMETER(Mandatory=$true, Position=11, HelpMessage = "LUN name",ParameterSetName='LUNName')][Parameter(ValueFromRemainingArguments=$true)][String[]]$Name = $null
   )
   $RetVal = $null
  
